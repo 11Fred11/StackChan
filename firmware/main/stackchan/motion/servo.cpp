@@ -112,6 +112,7 @@ void Servo::update_angle_anim_target(int angle)
     if (_auto_angle_sync_enabled) {
         _angle_anim.teleport(getCurrentAngle());  // Use current angle as start
     }
+    setTorqueEnabled(true);
     _angle_anim             = angle;  // Apply new target
     _snap_to_target_on_rest = true;
 }

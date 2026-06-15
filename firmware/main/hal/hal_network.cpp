@@ -5,7 +5,6 @@
  */
 #include "hal.h"
 #include <stackchan/stackchan.h>
-#include <mooncake.h>
 #include <mooncake_log.h>
 #include <wifi_manager.h>
 #include <board.h>
@@ -13,6 +12,7 @@
 #include <queue>
 #include <vector>
 #include <ctime>
+#include <cstdlib>
 #include <sys/time.h>
 #include <esp_sntp.h>
 #include <atomic>
@@ -29,6 +29,9 @@ static void time_sync_notification_cb(struct timeval* tv)
 void Hal::startSntp()
 {
     mclog::tagInfo(_tag, "SNTP init");
+
+    setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1);
+    tzset();
 
     if (esp_sntp_enabled()) {
     } else {

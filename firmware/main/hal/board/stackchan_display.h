@@ -15,17 +15,20 @@ private:
     esp_lcd_panel_io_handle_t panel_io_ = nullptr;
     esp_lcd_panel_handle_t panel_       = nullptr;
     int speaking_modifier_id_           = -1;
-    int idle_motion_modifier_id_        = -1;
-    int idle_expression_modifier_id_    = -1;
     int blink_modifier_id_              = -1;
     bool is_sleeping_                   = false;
-    uint8_t idle_motion_level_          = 2;
+
+    lv_obj_t* avatar_cont_              = nullptr;
+
+    // Clock UI
+    lv_obj_t* clock_cont_               = nullptr;
+    lv_obj_t* clock_time_label_         = nullptr;
+    lv_obj_t* clock_date_label_         = nullptr;
+    lv_timer_t* clock_timer_            = nullptr;
 
     lv_obj_t* preview_image_                         = nullptr;
     esp_timer_handle_t preview_timer_                = nullptr;
     std::unique_ptr<LvglImage> preview_image_cached_ = nullptr;
-
-    void CreateIdleMotionModifier();
 
 protected:
     virtual bool Lock(int timeout_ms = 0) override;
@@ -52,4 +55,7 @@ public:
     void LvglLock();
     void LvglUnlock();
     lv_disp_t* GetLvglDisplay();
+
+    void CreateClockUI();
+    void UpdateClock();
 };

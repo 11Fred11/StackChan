@@ -160,18 +160,12 @@ public:
         _label_msg->align(LV_ALIGN_CENTER, 0, 14);
         _label_msg->setText("Starting up ...");
 
-        _label_version = std::make_unique<uitk::lvgl_cpp::Label>(_panel->get());
-        _label_version->setTextFont(&lv_font_montserrat_14);
-        _label_version->setTextColor(lv_color_hex(0x8B8B8B));
-        _label_version->align(LV_ALIGN_BOTTOM_RIGHT, -7, -6);
-        _label_version->setText("V" FIRMWARE_VERSION);
     }
 
 private:
     std::unique_ptr<uitk::lvgl_cpp::Container> _panel;
     std::unique_ptr<uitk::lvgl_cpp::Label> _label_logo;
     std::unique_ptr<uitk::lvgl_cpp::Label> _label_msg;
-    std::unique_ptr<uitk::lvgl_cpp::Label> _label_version;
 };
 
 /**

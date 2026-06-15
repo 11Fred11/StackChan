@@ -2,9 +2,6 @@
 set(XIAOZHI_MAIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../xiaozhi-esp32/main")
 
 file(GLOB_RECURSE STACK_CHAN_SOURCES
-    "apps/*.c"
-    "apps/*.cc"
-    "apps/*.cpp"
     "assets/*.c"
     "assets/*.cc"
     "assets/*.cpp"
@@ -15,6 +12,16 @@ file(GLOB_RECURSE STACK_CHAN_SOURCES
     "stackchan/*.cc"
     "stackchan/*.cpp"
 )
+# Exclude files that depend on the removed mooncake component
+list(REMOVE_ITEM STACK_CHAN_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/hal/hal_account.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/hal/hal_app_center.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/hal/hal_ble.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/hal/hal_espnow.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/hal/hal_ezdata.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/hal/hal_ws_avatar.cpp"
+)
+
 set(STACK_CHAN_INCLUDE_DIRS 
     "."
 )
@@ -313,7 +320,6 @@ idf_component_register(SRCS ${SOURCES}
                         fatfs
                         ArduinoJson
                         esp-now
-                        mooncake
                         mooncake_log
                         smooth_ui_toolkit
                     )
