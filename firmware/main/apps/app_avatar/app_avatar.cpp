@@ -11,6 +11,7 @@
 #include <assets/assets.h>
 #include <smooth_lvgl.hpp>
 #include <stackchan/stackchan.h>
+#include <stackchan/avatar/skins/rick/rick.h>
 #include <apps/common/common.h>
 #include <string_view>
 #include <cstdint>
@@ -83,8 +84,8 @@ void AppAvatar::onOpen()
     // Destroy loading page
     loading_page.reset();
 
-    // Create default avatar
-    auto avatar = std::make_unique<avatar::DefaultAvatar>();
+    // Create rick avatar
+    auto avatar = std::make_unique<avatar::RickAvatar>();
     avatar->init(lv_screen_active());
     avatar->getPanel()->onClick().connect([&]() { _screen_clicked_flag = true; });
     GetStackChan().attachAvatar(std::move(avatar));

@@ -75,6 +75,8 @@ private:
         move_component(avatar.leftEye(), delta);
         move_component(avatar.rightEye(), delta);
         move_component(avatar.mouth(), delta);
+        move_component(avatar.nose(), delta);
+        move_component(avatar.unibrow(), delta);
 
         _last_applied_offset = new_offset;
     }

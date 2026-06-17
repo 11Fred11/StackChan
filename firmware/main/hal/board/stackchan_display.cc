@@ -16,6 +16,7 @@
 #include <lvgl.h>
 #include <lvgl_theme.h>
 #include <stackchan/stackchan.h>
+#include <stackchan/avatar/skins/rick/rick.h>
 #include <assets/lang_config.h>
 #include <hal/hal.h>
 
@@ -309,9 +310,6 @@ void StackChanAvatarDisplay::SetupUI()
 
     DisplayLockGuard lock(this);
 
-    // Remove boot logo
-    GetHAL().bootLogo.reset();
-
     ESP_LOGI(TAG, "Creating Stack-chan Avatar...");
 
     lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x000000), 0);
@@ -323,8 +321,10 @@ void StackChanAvatarDisplay::SetupUI()
     lv_obj_set_style_pad_all(avatar_cont_, 0, 0);
     lv_obj_align(avatar_cont_, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_scrollbar_mode(avatar_cont_, LV_SCROLLBAR_MODE_OFF);
+    // Keep boot logo visible on top during init; destroy it when STANDBY is reached
+    lv_obj_move_background(avatar_cont_);
 
-    auto avatar = std::make_unique<DefaultAvatar>();
+    auto avatar = std::make_unique<RickAvatar>();
     avatar->init(avatar_cont_);
     avatar->getPanel()->onClick().connect([]() {
         static uint32_t last_toggle_tick = 0;
@@ -550,6 +550,9 @@ void StackChanAvatarDisplay::SetStatus(const char* status)
         GetHAL().refreshRgb();
 
         _is_xiaozhi_idle = true;
+
+        // Device is ready — destroy boot logo
+        GetHAL().bootLogo.reset();
 
     } else if (strcmp(status, Lang::Strings::SPEAKING) == 0) {
         if (speaking_modifier_id_ < 0) {
