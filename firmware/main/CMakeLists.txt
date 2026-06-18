@@ -12,6 +12,15 @@ file(GLOB_RECURSE STACK_CHAN_SOURCES
     "stackchan/*.cc"
     "stackchan/*.cpp"
 )
+
+# Portal intro — listed explicitly so cmake does not need to be re-run after
+# these files are first added to the source tree (GLOB_RECURSE caches at
+# configure time; explicit entries are always evaluated).
+list(APPEND STACK_CHAN_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/hal/hal_portal_intro.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/images/portal/portal.c"
+)
+list(REMOVE_DUPLICATES STACK_CHAN_SOURCES)
 # Exclude files that depend on the removed mooncake component
 list(REMOVE_ITEM STACK_CHAN_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/hal/hal_app_center.cpp"
@@ -267,6 +276,7 @@ endif()
 file(GLOB COMMON_SOUNDS 
     ${XIAOZHI_MAIN_DIR}/assets/common/*.ogg
     assets/sfx/*.ogg
+    assets/sfx/rick/*.ogg
 )
 # Rick SFX pool — add files here to extend the pool without changing code
 file(GLOB RICK_SOUNDS "assets/sfx/rick/*.ogg")
