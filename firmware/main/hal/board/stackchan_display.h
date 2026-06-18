@@ -58,4 +58,5 @@ public:
 
     void CreateClockUI();
     void UpdateClock();
+    void HidePreviewImage();
 };

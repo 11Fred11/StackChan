@@ -220,6 +220,12 @@ lv_disp_t* StackChanAvatarDisplay::GetLvglDisplay()
 
 #include <hal/board/hal_bridge.h>
 
+static void on_preview_timer(void* arg)
+{
+    auto* display = static_cast<StackChanAvatarDisplay*>(arg);
+    display->HidePreviewImage();
+}
+
 static void on_clock_timer(lv_timer_t* timer)
 {
     auto* display = static_cast<StackChanAvatarDisplay*>(lv_timer_get_user_data(timer));
@@ -329,7 +335,7 @@ void StackChanAvatarDisplay::SetupUI()
     avatar->getPanel()->onClick().connect([]() {
         static uint32_t last_toggle_tick = 0;
         const uint32_t now               = GetHAL().millis();
-        if (last_toggle_tick != 0 && now - last_toggle_tick < 2000) {
+        if (last_toggle_tick != 0 && now - last_toggle_tick < 500) {
             return;
         }
 
@@ -437,6 +443,16 @@ void StackChanAvatarDisplay::ClearChatMessages()
     ESP_LOGI(TAG, "Chat messages cleared");
 }
 
+void StackChanAvatarDisplay::HidePreviewImage()
+{
+    LvglLock();
+    if (preview_image_ != nullptr) {
+        lv_obj_add_flag(preview_image_, LV_OBJ_FLAG_HIDDEN);
+    }
+    preview_image_cached_.reset();
+    LvglUnlock();
+}
+
 void StackChanAvatarDisplay::SetPreviewImage(std::unique_ptr<LvglImage> image)
 {
     DisplayLockGuard lock(this);
@@ -447,6 +463,9 @@ void StackChanAvatarDisplay::SetPreviewImage(std::unique_ptr<LvglImage> image)
     if (image == nullptr) {
         lv_obj_add_flag(preview_image_, LV_OBJ_FLAG_HIDDEN);
         preview_image_cached_.reset();
+        if (preview_timer_ != nullptr) {
+            esp_timer_stop(preview_timer_);
+        }
         return;
     }
 
@@ -459,6 +478,16 @@ void StackChanAvatarDisplay::SetPreviewImage(std::unique_ptr<LvglImage> image)
 
     lv_obj_remove_flag(preview_image_, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(preview_image_);
+
+    if (preview_timer_ == nullptr) {
+        esp_timer_create_args_t timer_args = {
+            .callback = on_preview_timer,
+            .arg = this,
+            .name = "preview_timer"
+        };
+        ESP_ERROR_CHECK(esp_timer_create(&timer_args, &preview_timer_));
+    }
+    ESP_ERROR_CHECK(esp_timer_start_once(preview_timer_, 5000000));
 }
 
 void StackChanAvatarDisplay::UpdateStatusBar(bool update_all)
