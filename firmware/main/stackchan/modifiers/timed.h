@@ -94,37 +94,4 @@ private:
     avatar::Emotion _target_emotion = avatar::Emotion::Neutral;
 };
 
-/**
- * @brief Set speech for the given duration
- *
- */
-class TimedSpeechModifier : public TimedEventModifier {
-public:
-    TimedSpeechModifier(std::string_view speech, uint32_t durationMs) : TimedEventModifier(durationMs)
-    {
-        _target_speech = speech;
-    }
-
-    void _on_start(Modifiable& stackchan) override
-    {
-        if (!stackchan.hasAvatar()) {
-            return;
-        }
-
-        stackchan.avatar().setSpeech(_target_speech);
-    }
-
-    void _on_end(Modifiable& stackchan) override
-    {
-        if (!stackchan.hasAvatar()) {
-            return;
-        }
-
-        stackchan.avatar().clearSpeech();
-    }
-
-private:
-    std::string _target_speech;
-};
-
 }  // namespace stackchan

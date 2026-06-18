@@ -133,7 +133,6 @@ void AppAvatar::onOpen()
         LvglLockGuard lvgl_lock;
 
         auto& avatar = GetStackChan().avatar();
-        avatar.setSpeech("");
         avatar.leftEye().setVisible(false);
         avatar.rightEye().setVisible(false);
         avatar.mouth().setVisible(false);
@@ -141,7 +140,6 @@ void AppAvatar::onOpen()
         auto view      = std::make_unique<view::WsCallView>(lv_screen_active(), caller);
         view->onAccept = []() {
             auto& avatar = GetStackChan().avatar();
-            avatar.setSpeech("");
             avatar.leftEye().setVisible(true);
             avatar.rightEye().setVisible(true);
             avatar.mouth().setVisible(true);
@@ -150,7 +148,6 @@ void AppAvatar::onOpen()
         };
         view->onDecline = []() {
             auto& avatar = GetStackChan().avatar();
-            avatar.setSpeech("");
             avatar.leftEye().setVisible(true);
             avatar.rightEye().setVisible(true);
             avatar.mouth().setVisible(true);
@@ -176,7 +173,6 @@ void AppAvatar::onOpen()
         }
 
         auto& avatar = GetStackChan().avatar();
-        avatar.setSpeech("");
         avatar.leftEye().setVisible(true);
         avatar.rightEye().setVisible(true);
         avatar.mouth().setVisible(true);
@@ -191,8 +187,6 @@ void AppAvatar::onOpen()
 
         auto& stackchan = GetStackChan();
 
-        stackchan.addModifier(
-            std::make_unique<TimedSpeechModifier>(fmt::format("{} says: {}", message.name, message.content), 6000));
         stackchan.addModifier(std::make_unique<SpeakingModifier>(2000));
 
         // Special handling

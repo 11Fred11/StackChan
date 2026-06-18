@@ -438,8 +438,6 @@ void StackChanAvatarDisplay::ClearChatMessages()
 
     DisplayLockGuard lock(this);
 
-    stackchan.avatar().clearSpeech();
-
     ESP_LOGI(TAG, "Chat messages cleared");
 }
 
@@ -497,19 +495,6 @@ void StackChanAvatarDisplay::UpdateStatusBar(bool update_all)
 void StackChanAvatarDisplay::SetTheme(Theme* theme)
 {
     ESP_LOGI(TAG, "SetTheme: %s", theme->name().c_str());
-
-    auto& stackchan = GetStackChan();
-    if (!stackchan.hasAvatar()) {
-        ESP_LOGE(TAG, "Avatar is invalid");
-        return;
-    }
-
-    DisplayLockGuard lock(this);
-
-    auto lvgl_theme = static_cast<LvglTheme*>(theme);
-    auto text_font  = lvgl_theme->text_font()->font();
-
-    stackchan.avatar().setSpeechTextFont((void*)text_font);
 }
 
 #include <hal/board/hal_bridge.h>
