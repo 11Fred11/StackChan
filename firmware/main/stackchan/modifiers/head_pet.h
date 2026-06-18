@@ -9,6 +9,7 @@
 #include "../utils/random.h"
 #include <smooth_ui_toolkit.hpp>
 #include <hal/hal.h>
+#include <hal/hal_rick_sfx.h>
 #include <cstdint>
 #include <memory>
 
@@ -77,6 +78,9 @@ private:
             auto angles     = stackchan.motion().getCurrentAngles();
             _prev_yaw       = angles.x;
             _prev_pitch     = angles.y;
+
+            // Play a random Rick Sanchez SFX on the first touch of each pet session
+            playRandomRickSfx();
         }
 
         // 视觉反馈
