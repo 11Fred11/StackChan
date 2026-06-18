@@ -6,7 +6,6 @@
 #pragma once
 #include "element.h"
 #include "feature.h"
-#include "speech_bubble.h"
 #include <functional>
 #include <memory>
 
@@ -22,7 +21,6 @@ struct KeyElements_t {
     std::unique_ptr<Feature> mouth;
     std::unique_ptr<Feature> nose;
     std::unique_ptr<Feature> unibrow;
-    std::unique_ptr<SpeechBubble> speechBubble;
 
     void forEach(std::function<void(Element*)> callback)
     {
@@ -40,9 +38,6 @@ struct KeyElements_t {
         }
         if (unibrow) {
             callback(unibrow.get());
-        }
-        if (speechBubble) {
-            callback(speechBubble.get());
         }
     }
 };

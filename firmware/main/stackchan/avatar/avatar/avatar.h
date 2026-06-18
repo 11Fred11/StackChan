@@ -86,27 +86,6 @@ public:
         return *getKeyElements().unibrow;
     }
 
-    void setSpeech(std::string_view text)
-    {
-        if (getKeyElements().speechBubble) {
-            getKeyElements().speechBubble->setSpeech(text);
-        }
-    }
-
-    void clearSpeech()
-    {
-        if (getKeyElements().speechBubble) {
-            getKeyElements().speechBubble->clearSpeech();
-        }
-    }
-
-    void setSpeechTextFont(void* font)
-    {
-        if (getKeyElements().speechBubble) {
-            getKeyElements().speechBubble->setTextFont(font);
-        }
-    }
-
     void setModifyLock(bool locked)
     {
         _is_modify_locked = locked;
