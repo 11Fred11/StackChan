@@ -13,13 +13,6 @@ file(GLOB_RECURSE STACK_CHAN_SOURCES
     "stackchan/*.cpp"
 )
 
-# Portal intro — listed explicitly so cmake does not need to be re-run after
-# these files are first added to the source tree (GLOB_RECURSE caches at
-# configure time; explicit entries are always evaluated).
-list(APPEND STACK_CHAN_SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/hal/hal_portal_intro.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/assets/images/portal/portal.c"
-)
 list(REMOVE_DUPLICATES STACK_CHAN_SOURCES)
 # Exclude files that depend on the removed mooncake component
 list(REMOVE_ITEM STACK_CHAN_SOURCES
@@ -344,6 +337,7 @@ endif()
 target_compile_definitions(${COMPONENT_LIB}
                     PRIVATE BOARD_TYPE=\"${BOARD_TYPE}\" BOARD_NAME=\"${BOARD_NAME}\"
                     PRIVATE BUILTIN_TEXT_FONT=${BUILTIN_TEXT_FONT} BUILTIN_ICON_FONT=${BUILTIN_ICON_FONT}
+                    PRIVATE LV_GIF_CACHE_DECODE_DATA=1
                     )
 
 # Add generation rules
