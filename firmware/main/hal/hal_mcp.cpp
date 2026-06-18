@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: MIT
  */
 #include "hal.h"
+#include "hal_status_overlay.h"
 #include <mooncake_log.h>
 #include <mcp_server.h>
 #include <stackchan/stackchan.h>
-
 
 using namespace stackchan;
 
@@ -90,6 +90,19 @@ void Hal::xiaozhi_mcp_init()
             GetStackChan().rightNeonLight().setColor(r, g, b);
 
             return true;
+        });
+
+    mclog::tagInfo(_tag, "add device.show_status tool");
+    mcp_server.AddTool(
+        "self.device.show_status",
+        "Show a full-screen device status overlay for 10 seconds. "
+        "Displays WiFi SSID and signal strength, battery level, speaker volume, "
+        "display brightness, firmware version, and device name.",
+        std::vector<Property>{},
+        [this](const PropertyList& /*properties*/) -> ReturnValue {
+            LvglLockGuard lock;
+            showStatusOverlay(*this);
+            return std::string(R"({"status": "ok"})");
         });
 
 
