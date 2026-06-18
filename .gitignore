@@ -1,2 +1,10 @@
 .DS_Store
 .idea/
+
+# asdf local version pin (personal per-developer)
+.tool-versions
+
+# Python bytecode
+**/__pycache__/
+**/*.pyc
+**/*.pyo
