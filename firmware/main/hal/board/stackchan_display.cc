@@ -19,6 +19,7 @@
 #include <stackchan/avatar/skins/rick/rick.h>
 #include <assets/lang_config.h>
 #include <hal/hal.h>
+#include <hal/hal_portal_intro.h>
 
 using namespace stackchan;
 using namespace stackchan::avatar;
@@ -169,13 +170,17 @@ StackChanAvatarDisplay::StackChanAvatarDisplay(esp_lcd_panel_io_handle_t panel_i
 
     // Create boot logo label if not warm boot
     if (GetHAL().getWarmRebootTarget() < 0) {
-        ESP_LOGI(TAG, "Create boot logo label");
+        ESP_LOGI(TAG, "Create boot logo and portal intro");
         Lock();
         {
             uitk::lvgl_cpp::ScreenActive screen;
             screen.setBgColor(lv_color_hex(0x000000));
         }
+        // Boot logo sits underneath; portal intro overlays it in the foreground.
+        // The portal auto-dismisses after ~2.9 s, revealing the boot logo until
+        // the avatar is ready and SetStatus("standby") destroys bootLogo.
         GetHAL().bootLogo = std::make_unique<BootLogo>();
+        showPortalIntro(lv_screen_active(), []() {});
         Unlock();
     }
 }
