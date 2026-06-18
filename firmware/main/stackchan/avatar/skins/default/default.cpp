@@ -21,8 +21,6 @@ void DefaultAvatar::init(lv_obj_t* parent, const lv_font_t* font)
     _key_elements.leftEye  = std::make_unique<DefaultEyes>(_pannel->get(), primaryColor, secondaryColor, true);
     _key_elements.rightEye = std::make_unique<DefaultEyes>(_pannel->get(), primaryColor, secondaryColor, false);
     _key_elements.mouth    = std::make_unique<DefaultMouth>(_pannel->get(), primaryColor, secondaryColor);
-    _key_elements.speechBubble =
-        std::make_unique<DefaultSpeechBubble>(_pannel->get(), primaryColor, secondaryColor, font);
 }
 
 Container* DefaultAvatar::getPanel() const

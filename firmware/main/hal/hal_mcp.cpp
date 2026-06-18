@@ -7,7 +7,7 @@
 #include <mooncake_log.h>
 #include <mcp_server.h>
 #include <stackchan/stackchan.h>
-#include <apps/common/common.h>
+
 
 using namespace stackchan;
 
@@ -92,58 +92,5 @@ void Hal::xiaozhi_mcp_init()
             return true;
         });
 
-    mclog::tagInfo(_tag, "add robot.create_reminder tool");
-    mcp_server.AddTool("self.robot.create_reminder",
-                       "Create a reminder. Duration is in seconds. Message is what to say when time is up. Set repeat "
-                       "to true to repeat the reminder.",
-                       PropertyList({Property("duration_seconds", kPropertyTypeInteger, 60, 1, 86400),
-                                     Property("message", kPropertyTypeString, std::string("Time's up!")),
-                                     Property("repeat", kPropertyTypeBoolean, false)}),
-                       [this](const PropertyList& properties) -> ReturnValue {
-                           int duration_seconds = properties["duration_seconds"].value<int>();
-                           std::string message  = properties["message"].value<std::string>();
-                           bool repeat          = properties["repeat"].value<bool>();
 
-                           // Default message
-                           if (message.empty()) {
-                               message = "Time's up!";
-                           }
-
-                           mclog::tagInfo(_tag, "create_reminder: duration={}s, message={}, repeat={}",
-                                          duration_seconds, message, repeat);
-
-                           int id = tools::create_reminder(duration_seconds * 1000, message, repeat);
-
-                           return id;
-                       });
-
-    mclog::tagInfo(_tag, "add robot.get_reminders tool");
-    mcp_server.AddTool("self.robot.get_reminders", "Get list of active reminders.", std::vector<Property>{},
-                       [this](const PropertyList& properties) -> ReturnValue {
-                           mclog::tagInfo(_tag, "get_reminders");
-                           auto reminders          = tools::get_active_reminders();
-                           std::string result_json = "[";
-                           for (size_t i = 0; i < reminders.size(); ++i) {
-                               const auto& r = reminders[i];
-                               result_json +=
-                                   fmt::format(R"({{"id": {}, "duration_ms": {}, "message": "{}", "repeat": {}}})",
-                                               r.id, r.durationMs, r.message, r.repeat ? "true" : "false");
-                               if (i < reminders.size() - 1) {
-                                   result_json += ", ";
-                               }
-                           }
-                           result_json += "]";
-                           mclog::tagInfo(_tag, "get_reminders result: {}", result_json);
-                           return result_json;
-                       });
-
-    mclog::tagInfo(_tag, "add robot.stop_reminder tool");
-    mcp_server.AddTool("self.robot.stop_reminder", "Stop a reminder by ID.",
-                       PropertyList({Property("id", kPropertyTypeInteger, -1)}),
-                       [this](const PropertyList& properties) -> ReturnValue {
-                           int id = properties["id"].value<int>();
-                           mclog::tagInfo(_tag, "stop_reminder: id={}", id);
-                           tools::stop_reminder(id);
-                           return true;
-                       });
 }

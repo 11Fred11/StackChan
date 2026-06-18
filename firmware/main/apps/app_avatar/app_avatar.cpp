@@ -11,6 +11,7 @@
 #include <assets/assets.h>
 #include <smooth_lvgl.hpp>
 #include <stackchan/stackchan.h>
+#include <stackchan/avatar/skins/rick/rick.h>
 #include <apps/common/common.h>
 #include <string_view>
 #include <cstdint>
@@ -83,8 +84,8 @@ void AppAvatar::onOpen()
     // Destroy loading page
     loading_page.reset();
 
-    // Create default avatar
-    auto avatar = std::make_unique<avatar::DefaultAvatar>();
+    // Create rick avatar
+    auto avatar = std::make_unique<avatar::RickAvatar>();
     avatar->init(lv_screen_active());
     avatar->getPanel()->onClick().connect([&]() { _screen_clicked_flag = true; });
     GetStackChan().attachAvatar(std::move(avatar));
@@ -132,7 +133,6 @@ void AppAvatar::onOpen()
         LvglLockGuard lvgl_lock;
 
         auto& avatar = GetStackChan().avatar();
-        avatar.setSpeech("");
         avatar.leftEye().setVisible(false);
         avatar.rightEye().setVisible(false);
         avatar.mouth().setVisible(false);
@@ -140,7 +140,6 @@ void AppAvatar::onOpen()
         auto view      = std::make_unique<view::WsCallView>(lv_screen_active(), caller);
         view->onAccept = []() {
             auto& avatar = GetStackChan().avatar();
-            avatar.setSpeech("");
             avatar.leftEye().setVisible(true);
             avatar.rightEye().setVisible(true);
             avatar.mouth().setVisible(true);
@@ -149,7 +148,6 @@ void AppAvatar::onOpen()
         };
         view->onDecline = []() {
             auto& avatar = GetStackChan().avatar();
-            avatar.setSpeech("");
             avatar.leftEye().setVisible(true);
             avatar.rightEye().setVisible(true);
             avatar.mouth().setVisible(true);
@@ -175,7 +173,6 @@ void AppAvatar::onOpen()
         }
 
         auto& avatar = GetStackChan().avatar();
-        avatar.setSpeech("");
         avatar.leftEye().setVisible(true);
         avatar.rightEye().setVisible(true);
         avatar.mouth().setVisible(true);
@@ -190,8 +187,6 @@ void AppAvatar::onOpen()
 
         auto& stackchan = GetStackChan();
 
-        stackchan.addModifier(
-            std::make_unique<TimedSpeechModifier>(fmt::format("{} says: {}", message.name, message.content), 6000));
         stackchan.addModifier(std::make_unique<SpeakingModifier>(2000));
 
         // Special handling

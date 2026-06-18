@@ -6,7 +6,6 @@
 #include "hal.h"
 #include <stackchan/stackchan.h>
 #include "board/hal_bridge.h"
-#include <mooncake.h>
 #include <mooncake_log.h>
 #include <board.h>
 #include <web_socket.h>

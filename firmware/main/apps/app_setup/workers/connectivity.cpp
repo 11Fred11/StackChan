@@ -199,7 +199,6 @@ void WifiSetupWorker::update_state()
                 avatar.leftEye().setVisible(true);
                 avatar.rightEye().setVisible(true);
                 avatar.mouth().setVisible(true);
-                avatar.setSpeech("Ready to Configure ~");
 
                 GetStackChan().addModifier(std::make_unique<TimedEmotionModifier>(avatar::Emotion::Happy, 4000));
                 GetStackChan().addModifier(std::make_unique<BreathModifier>());
@@ -213,12 +212,9 @@ void WifiSetupWorker::update_state()
                     switch_state(State::WaitAppConnection);
                 } else if (_last_app_config_event == AppConfigEvent::TryWifiConnect) {
                     auto& avatar = GetStackChan().avatar();
-                    avatar.setSpeech("Verifying...");
                     GetStackChan().addModifier(std::make_unique<SpeakingModifier>(2000, 180, false));
                 } else if (_last_app_config_event == AppConfigEvent::WifiConnectFailed) {
                     GetStackChan().addModifier(std::make_unique<TimedEmotionModifier>(avatar::Emotion::Sad, 4000));
-                    GetStackChan().addModifier(
-                        std::make_unique<TimedSpeechModifier>("Connect Failed. Try again?", 6000));
                     GetStackChan().addModifier(std::make_unique<SpeakingModifier>(3000, 180, false));
                 } else if (_last_app_config_event == AppConfigEvent::WifiConnected) {
                     switch_state(State::Done);
@@ -248,7 +244,6 @@ void WifiSetupWorker::update_state()
                 if (_state_done_data.reboot_count > 0) {
                     _state_done_data.reboot_count--;
                     auto& avatar = GetStackChan().avatar();
-                    avatar.setSpeech(fmt::format("Done!  Reboot in {}s.", _state_done_data.reboot_count));
                 } else {
                     mclog::tagInfo(_tag, "rebooting...");
                     GetHAL().delay(100);
@@ -279,7 +274,6 @@ void WifiSetupWorker::cleanup_ui()
             break;
         }
         case State::AppConnected: {
-            GetStackChan().avatar().setSpeech("");
             GetStackChan().clearModifiers();
             break;
         }

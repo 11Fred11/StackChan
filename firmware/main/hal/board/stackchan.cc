@@ -659,3 +659,5 @@ void hal_bridge::toggle_xiaozhi_chat_state()
     }
     app.ToggleChatState();
 }
+
+

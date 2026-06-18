@@ -132,8 +132,6 @@ void Hal::updateHeapStatusLog()
 /* -------------------------------------------------------------------------- */
 #include "board/hal_bridge.h"
 #include <stackchan/stackchan.h>
-#include <apps/common/common.h>
-#include <assets/assets.h>
 
 void Hal::xiaozhi_board_init()
 {
@@ -149,8 +147,6 @@ static void _stackchan_update_task(void* param)
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(20));
 
-        tools::update_reminders();
-
         LvglLockGuard lock;
 
         if (!hal_bridge::is_xiaozhi_idle()) {
@@ -164,15 +160,9 @@ static void _stackchan_update_task(void* param)
         }
 
         if (!is_setup_done) {
-            // Setup when xiaozhi ready
             GetHAL().startSntp();
-            view::create_home_indicator([]() { GetHAL().requestWarmReboot(0); }, 0x81DBBD, 0x134233);
-            view::create_status_bar(0x81DBBD, 0x134233);
             is_setup_done = true;
         }
-
-        view::update_home_indicator();
-        view::update_status_bar();
     }
 }
 
@@ -183,18 +173,6 @@ void Hal::startXiaozhi()
     auto& motion = GetStackChan().motion();
     motion.setAutoAngleSyncEnabled(true);
     motion.setAutoTorqueReleaseEnabled(true);
-
-    // Setup reminder handler
-    tools::on_reminder_triggered().clear();
-    tools::on_reminder_triggered().connect([](int id, std::string_view msg) {
-        mclog::tagInfo(_tag, "reminder triggered: id: {}, msg: {}", id, msg);
-        {
-            LvglLockGuard lock;
-            auto& avatar = GetStackChan().avatar();
-            avatar.addDecorator(std::make_unique<view::ReminderView>(lv_screen_active(), msg));
-        }
-        hal_bridge::app_play_sound(OGG_NEW_NOTIFICATION);
-    });
 
     // Start stackchan update task
     xTaskCreatePinnedToCore(_stackchan_update_task, "stackchan", 4096, NULL, 3, NULL, 1);

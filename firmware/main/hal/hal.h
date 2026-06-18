@@ -145,33 +145,34 @@ public:
         _panel->setSize(320, 240);
         _panel->setAlign(LV_ALIGN_CENTER);
         _panel->setBorderWidth(0);
-        _panel->setBgOpa(0);
+        _panel->setBgColor(lv_color_hex(0x000000));
         _panel->setPaddingAll(0);
 
         _label_logo = std::make_unique<uitk::lvgl_cpp::Label>(_panel->get());
         _label_logo->setTextFont(&lv_font_montserrat_24);
         _label_logo->setTextColor(lv_color_hex(0xFFFFFF));
-        _label_logo->align(LV_ALIGN_CENTER, 0, -14);
+        _label_logo->align(LV_ALIGN_CENTER, 0, -60);
         _label_logo->setText("STACKCHAN");
 
         _label_msg = std::make_unique<uitk::lvgl_cpp::Label>(_panel->get());
         _label_msg->setTextFont(&lv_font_montserrat_16);
         _label_msg->setTextColor(lv_color_hex(0xBFBFBF));
-        _label_msg->align(LV_ALIGN_CENTER, 0, 14);
-        _label_msg->setText("Starting up ...");
+        _label_msg->align(LV_ALIGN_CENTER, 0, 0);
+        _label_msg->setText("Starting up...");
 
         _label_version = std::make_unique<uitk::lvgl_cpp::Label>(_panel->get());
         _label_version->setTextFont(&lv_font_montserrat_14);
-        _label_version->setTextColor(lv_color_hex(0x8B8B8B));
-        _label_version->align(LV_ALIGN_BOTTOM_RIGHT, -7, -6);
-        _label_version->setText("V" FIRMWARE_VERSION);
+        _label_version->setTextColor(lv_color_hex(0x666666));
+        _label_version->align(LV_ALIGN_CENTER, 0, 90);
+        _label_version->setText("v" FIRMWARE_VERSION);
+
     }
 
 private:
     std::unique_ptr<uitk::lvgl_cpp::Container> _panel;
     std::unique_ptr<uitk::lvgl_cpp::Label> _label_logo;
-    std::unique_ptr<uitk::lvgl_cpp::Label> _label_msg;
     std::unique_ptr<uitk::lvgl_cpp::Label> _label_version;
+    std::unique_ptr<uitk::lvgl_cpp::Label> _label_msg;
 };
 
 /**

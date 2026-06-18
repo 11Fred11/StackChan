@@ -76,25 +76,14 @@ public:
         return *getKeyElements().mouth;
     }
 
-    void setSpeech(std::string_view text)
+    Feature& nose()
     {
-        if (getKeyElements().speechBubble) {
-            getKeyElements().speechBubble->setSpeech(text);
-        }
+        return *getKeyElements().nose;
     }
 
-    void clearSpeech()
+    Feature& unibrow()
     {
-        if (getKeyElements().speechBubble) {
-            getKeyElements().speechBubble->clearSpeech();
-        }
-    }
-
-    void setSpeechTextFont(void* font)
-    {
-        if (getKeyElements().speechBubble) {
-            getKeyElements().speechBubble->setTextFont(font);
-        }
+        return *getKeyElements().unibrow;
     }
 
     void setModifyLock(bool locked)
