@@ -5,6 +5,7 @@
  */
 #include "app_launcher.h"
 #include <hal/hal.h>
+#include <hal/hal_rick_sfx.h>
 #include <mooncake.h>
 #include <mooncake_log.h>
 #include <stackchan/stackchan.h>
@@ -86,9 +87,13 @@ void AppLauncher::screensaver_update()
         if (!_screensaver) {
             _screensaver = std::make_unique<view::Screensaver>();
             _screensaver->init();
+            // Screensaver active — suppress Rick SFX while the avatar is hidden.
+            rick_sfx::setEnabled(false);
         }
     } else if (_screensaver) {
         _screensaver.reset();
+        // Screensaver dismissed — re-enable Rick SFX.
+        rick_sfx::setEnabled(true);
     }
 
     // Update in 30ms interval

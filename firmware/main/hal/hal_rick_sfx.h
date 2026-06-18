@@ -5,21 +5,38 @@
  */
 #pragma once
 
-namespace stackchan {
+namespace rick_sfx {
 
 /**
- * @brief Play a random Rick Sanchez SFX through the speaker.
+ * @brief Play a random Rick SFX (burp or "Wubba Lubba Dub Dub").
  *
- * Picks one entry at random from the internal SFX pool using the hardware RNG
- * (esp_random) and forwards it to hal_bridge::app_play_sound.
+ * No-op (returns false) when:
+ *   - SFX is already playing (_playing guard prevents overlap / re-trigger)
+ *   - SFX has been disabled via setEnabled(false) (screensaver / clock-idle gate)
  *
- * Extend the pool by adding new OGG/Opus files to assets/sfx/rick/ and
- * appending the corresponding OGG_RICK_* string_view to kRickSfxPool in
- * hal_rick_sfx.cpp.
- *
- * Must be called from a task that does NOT hold the LVGL lock (e.g. from
- * HeadPetModifier::_update which runs inside the stackchan update task).
+ * @return true  if playback was initiated
+ * @return false if skipped (already playing or disabled)
  */
-void playRandomRickSfx();
+bool playRandom();
 
-}  // namespace stackchan
+/**
+ * @brief Returns true while an SFX is considered in-flight.
+ *
+ * Cleared by a one-shot LVGL timer ~2.5 s after playback starts
+ * (conservative upper-bound covering all clips).
+ */
+bool isPlaying();
+
+/**
+ * @brief Enable or disable SFX playback.
+ *
+ * Call setEnabled(false) when the launcher screensaver activates;
+ * setEnabled(true) when it deactivates.  The XiaoZhi standby/clock gate
+ * is handled separately in head_pet.h via hal_bridge::is_xiaozhi_idle().
+ */
+void setEnabled(bool enabled);
+
+/** @brief Returns the current enabled state. */
+bool isEnabled();
+
+}  // namespace rick_sfx
