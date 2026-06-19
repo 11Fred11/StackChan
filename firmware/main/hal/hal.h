@@ -16,7 +16,6 @@
 #include <lvgl_image.h>
 #include <string_view>
 #include <display/lvgl_display/gif/lvgl_gif.h>
-#include <assets/images/rick_loading.h>
 
 /**
  * @brief
@@ -139,46 +138,6 @@ enum class MicTestStatus {
  * @brief
  *
  */
-class BootLogo {
-public:
-    BootLogo()
-    {
-        _panel = std::make_unique<uitk::lvgl_cpp::Container>(lv_screen_active());
-        _panel->setSize(320, 240);
-        _panel->setAlign(LV_ALIGN_CENTER);
-        _panel->setBorderWidth(0);
-        _panel->setBgColor(lv_color_hex(0x000000));
-        _panel->setPaddingAll(0);
-
-        _gif = std::make_unique<LvglGif>(&rick_loading);
-        if (_gif->IsLoaded()) {
-            _img = lv_image_create(_panel->get());
-            lv_image_set_src(_img, _gif->image_dsc());
-            lv_obj_center(_img);
-            _gif->SetFrameCallback([this]() {
-                lv_obj_invalidate(_img);
-            });
-            _gif->Start();
-        }
-
-        _label_version = std::make_unique<uitk::lvgl_cpp::Label>(_panel->get());
-        _label_version->setTextFont(&lv_font_montserrat_14);
-        _label_version->setTextColor(lv_color_hex(0x666666));
-        _label_version->align(LV_ALIGN_CENTER, 0, 103);
-        _label_version->setText("v" FIRMWARE_VERSION);
-    }
-
-private:
-    std::unique_ptr<uitk::lvgl_cpp::Container> _panel;
-    std::unique_ptr<uitk::lvgl_cpp::Label> _label_version;
-    std::unique_ptr<LvglGif> _gif;
-    lv_obj_t* _img = nullptr;
-};
-
-/**
- * @brief
- *
- */
 class Hal {
 public:
     void init();
@@ -197,7 +156,6 @@ public:
 
     /* --------------------------------- Display -------------------------------- */
     lv_indev_t* lvTouchpad = nullptr;
-    std::unique_ptr<BootLogo> bootLogo;
     void lvglLock();
     void lvglUnlock();
     void setBackLightBrightness(uint8_t brightness, bool permanent = false);

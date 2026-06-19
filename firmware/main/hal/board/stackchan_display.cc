@@ -167,17 +167,7 @@ StackChanAvatarDisplay::StackChanAvatarDisplay(esp_lcd_panel_io_handle_t panel_i
         lv_display_set_offset(display_, offset_x, offset_y);
     }
 
-    // Create boot logo label if not warm boot
-    if (GetHAL().getWarmRebootTarget() < 0) {
-        ESP_LOGI(TAG, "Create boot logo");
-        Lock();
-        {
-            uitk::lvgl_cpp::ScreenActive screen;
-            screen.setBgColor(lv_color_hex(0x000000));
-        }
-        GetHAL().bootLogo = std::make_unique<BootLogo>();
-        Unlock();
-    }
+
 }
 
 StackChanAvatarDisplay::~StackChanAvatarDisplay()
@@ -576,9 +566,6 @@ void StackChanAvatarDisplay::SetStatus(const char* status)
 
         GetHAL().setRgbColor(0, 0, 0, 0);
         GetHAL().refreshRgb();
-
-        // Device is ready — destroy boot logo
-        GetHAL().bootLogo.reset();
 
     } else if (strcmp(status, Lang::Strings::SPEAKING) == 0) {
         hal_bridge::set_app_state(AppState::Speaking);

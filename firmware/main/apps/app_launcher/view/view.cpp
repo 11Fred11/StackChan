@@ -496,8 +496,6 @@ void LauncherView::init(std::vector<mooncake::AppProps_t> appPorps)
         _state = STATE_STARTUP;
     }
 
-    // Destory boot logo label
-    GetHAL().bootLogo.reset();
 }
 
 void LauncherView::update()
