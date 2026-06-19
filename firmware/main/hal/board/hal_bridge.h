@@ -10,6 +10,13 @@
 #include <driver/i2c_master.h>
 #include <string_view>
 
+enum class AppState : uint8_t {
+    Unknown = 0,
+    Standby,
+    Listening,
+    Speaking,
+};
+
 namespace hal_bridge {
 
 struct TouchPoint_t {
@@ -50,6 +57,8 @@ void xiaozhi_board_init();
 void start_xiaozhi_app();
 bool is_xiaozhi_ready();
 bool is_xiaozhi_idle();
+AppState get_app_state();
+void set_app_state(AppState state);
 XiaozhiConfig_t get_xiaozhi_config();
 void set_xiaozhi_config(const XiaozhiConfig_t& config);
 
