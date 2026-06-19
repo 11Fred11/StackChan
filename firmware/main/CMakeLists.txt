@@ -268,6 +268,9 @@ file(GLOB COMMON_SOUNDS
     ${XIAOZHI_MAIN_DIR}/assets/common/*.ogg
     assets/sfx/*.ogg
 )
+# Rick SFX pool — add files here to extend the pool without changing code
+file(GLOB RICK_SOUNDS "assets/sfx/rick/*.ogg")
+list(APPEND COMMON_SOUNDS ${RICK_SOUNDS})
 
 # If target chip is ESP32, exclude specific files to avoid build errors
 if(CONFIG_IDF_TARGET_ESP32)

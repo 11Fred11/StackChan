@@ -9,6 +9,8 @@
 #include "../utils/random.h"
 #include <smooth_ui_toolkit.hpp>
 #include <hal/hal.h>
+#include <hal/hal_rick_sfx.h>
+#include <hal/board/hal_bridge.h>
 #include <cstdint>
 #include <memory>
 
@@ -77,6 +79,9 @@ private:
             auto angles     = stackchan.motion().getCurrentAngles();
             _prev_yaw       = angles.x;
             _prev_pitch     = angles.y;
+
+            // Play a random Rick Sanchez SFX on the first touch of each pet session
+            playRandomRickSfx();
         }
 
         // 视觉反馈
@@ -92,6 +97,14 @@ private:
 
         // 动作反馈
         perform_pet_motion(stackchan);
+
+        // SFX: only when avatar is active (not idle/clock) and no SFX already playing.
+        // hal_bridge::is_xiaozhi_idle() is true in STANDBY (clock shown) → skip.
+        // rick_sfx::isEnabled() is false while the launcher screensaver is active → skip.
+        // rick_sfx::isPlaying() prevents re-triggering before the clip finishes.
+        if (!hal_bridge::is_xiaozhi_idle() && rick_sfx::isEnabled() && !rick_sfx::isPlaying()) {
+            rick_sfx::playRandom();
+        }
     }
 
     void restore_original_state(Modifiable& stackchan)
