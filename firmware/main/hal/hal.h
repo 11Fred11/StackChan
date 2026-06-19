@@ -318,6 +318,8 @@ private:
 
 Hal& GetHAL();
 
+void head_touch_wake();
+
 /**
  * @brief
  *

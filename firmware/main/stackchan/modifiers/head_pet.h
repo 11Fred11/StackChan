@@ -79,9 +79,6 @@ private:
             auto angles     = stackchan.motion().getCurrentAngles();
             _prev_yaw       = angles.x;
             _prev_pitch     = angles.y;
-
-            // Play a random Rick Sanchez SFX on the first touch of each pet session
-            rick_sfx::playRandom();
         }
 
         // 视觉反馈

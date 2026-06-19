@@ -115,9 +115,20 @@ private:
     int16_t initial_position;
 };
 
+static TaskHandle_t _touch_task_handle = NULL;
+
+void head_touch_wake()
+{
+    if (_touch_task_handle != NULL) {
+        xTaskNotifyGive(_touch_task_handle);
+    }
+}
+
 static void _head_touch_update_task(void* param)
 {
     mclog::tagInfo(_tag, "start update task");
+
+    _touch_task_handle = xTaskGetCurrentTaskHandle();
 
     si12t_handle_t si12t = (si12t_handle_t)param;
     uint8_t touch_result = 0;
@@ -129,12 +140,15 @@ static void _head_touch_update_task(void* param)
     vTaskDelay(pdMS_TO_TICKS(200));
 
     while (1) {
-        // Read data
+        if (hal_bridge::is_xiaozhi_idle()) {
+            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+            continue;
+        }
+
         si12t_read_touch_result(si12t, &touch_result);
         si12t_parse_touch_result_to(touch_result, data.intensity);
         data.timestamp = xTaskGetTickCount();
 
-        // Update and fire event
         gesture = recognizer.update(data);
         if (gesture != HeadPetGesture::None) {
             GetHAL().onHeadPetGesture.emit(gesture);

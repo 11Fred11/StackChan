@@ -500,14 +500,26 @@ void StackChanAvatarDisplay::SetTheme(Theme* theme)
 
 #include <hal/board/hal_bridge.h>
 static bool _is_xiaozhi_ready = false;
-static bool _is_xiaozhi_idle  = false;
+static AppState _app_state = AppState::Unknown;
 bool hal_bridge::is_xiaozhi_ready()
 {
     return _is_xiaozhi_ready;
 }
 bool hal_bridge::is_xiaozhi_idle()
 {
-    return _is_xiaozhi_idle;
+    return _app_state == AppState::Standby;
+}
+AppState hal_bridge::get_app_state()
+{
+    return _app_state;
+}
+void hal_bridge::set_app_state(AppState state)
+{
+    AppState prev = _app_state;
+    _app_state = state;
+    if (prev == AppState::Standby && state != AppState::Standby) {
+        head_touch_wake();
+    }
 }
 
 void StackChanAvatarDisplay::SetStatus(const char* status)
@@ -525,6 +537,8 @@ void StackChanAvatarDisplay::SetStatus(const char* status)
     is_sleeping_ = false;
 
     if (strcmp(status, Lang::Strings::LISTENING) == 0) {
+        hal_bridge::set_app_state(AppState::Listening);
+
         if (speaking_modifier_id_ >= 0) {
             stackchan.removeModifier(speaking_modifier_id_);
             avatar.mouth().setWeight(0);
@@ -542,9 +556,8 @@ void StackChanAvatarDisplay::SetStatus(const char* status)
         GetHAL().setRgbColor(0, 0, 50, 0);
         GetHAL().refreshRgb();
 
-        _is_xiaozhi_idle = false;
-
     } else if (strcmp(status, Lang::Strings::STANDBY) == 0) {
+        hal_bridge::set_app_state(AppState::Standby);
         _is_xiaozhi_ready = true;
 
         if (speaking_modifier_id_ >= 0) {
@@ -564,12 +577,12 @@ void StackChanAvatarDisplay::SetStatus(const char* status)
         GetHAL().setRgbColor(0, 0, 0, 0);
         GetHAL().refreshRgb();
 
-        _is_xiaozhi_idle = true;
-
         // Device is ready — destroy boot logo
         GetHAL().bootLogo.reset();
 
     } else if (strcmp(status, Lang::Strings::SPEAKING) == 0) {
+        hal_bridge::set_app_state(AppState::Speaking);
+
         if (speaking_modifier_id_ < 0) {
             speaking_modifier_id_ = stackchan.addModifier(std::make_unique<SpeakingModifier>(0, 180, false));
         }
@@ -584,8 +597,6 @@ void StackChanAvatarDisplay::SetStatus(const char* status)
 
         GetHAL().setRgbColor(0, 0, 0, 50);
         GetHAL().refreshRgb();
-
-        _is_xiaozhi_idle = false;
     } else {
         ESP_LOGW(TAG, "Unknown status: %s", status);
     }

@@ -149,7 +149,7 @@ static void _stackchan_update_task(void* param)
 
         LvglLockGuard lock;
 
-        if (!hal_bridge::is_xiaozhi_idle()) {
+        if (hal_bridge::is_xiaozhi_idle()) {
             vTaskDelay(pdMS_TO_TICKS(100));
         }
 
