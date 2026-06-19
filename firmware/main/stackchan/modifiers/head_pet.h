@@ -5,7 +5,6 @@
  */
 #pragma once
 #include "../modifiable.h"
-#include "../avatar/decorators/decorators.h"
 #include "../utils/random.h"
 #include <smooth_ui_toolkit.hpp>
 #include <hal/hal.h>
@@ -54,7 +53,7 @@ public:
         // 处理“手松开”事件
         if (_event_release) {
             _event_release = false;
-            if (_in_happy_state) {
+            if (_in_state) {
                 _is_waiting_restore = true;
                 _restore_tick       = now + _restore_delay_ms;
             }
@@ -72,9 +71,9 @@ private:
     {
         auto& avatar = stackchan.avatar();
 
-        // 首次进入开心状态，记录原始信息
-        if (!_in_happy_state) {
-            _in_happy_state = true;
+        // 首次进入响应状态，记录原始信息
+        if (!_in_state) {
+            _in_state = true;
             _prev_emotion   = avatar.getEmotion();
             auto angles     = stackchan.motion().getCurrentAngles();
             _prev_yaw       = angles.x;
@@ -82,15 +81,7 @@ private:
         }
 
         // 视觉反馈
-        avatar.setEmotion(avatar::Emotion::Happy);
-
-        // 添加爱心装饰
-        int duration = Random::getInstance().getInt(1500, 2500);
-        avatar.removeDecorator(_heart_decorator_id);
-        avatar.removeDecorator(_shy_decorator_id);
-        _heart_decorator_id =
-            avatar.addDecorator(std::make_unique<avatar::HeartDecorator>(lv_screen_active(), duration, 500));
-        _shy_decorator_id = avatar.addDecorator(std::make_unique<avatar::ShyDecorator>(lv_screen_active(), duration));
+        avatar.setEmotion(avatar::Emotion::Burp);
 
         // 动作反馈
         perform_pet_motion(stackchan);
@@ -106,14 +97,14 @@ private:
 
     void restore_original_state(Modifiable& stackchan)
     {
-        if (!_in_happy_state) {
+        if (!_in_state) {
             return;
         }
 
         stackchan.avatar().setEmotion(_prev_emotion);
         stackchan.motion().moveWithSpeed(_prev_yaw, _prev_pitch, 200);
 
-        _in_happy_state = false;
+        _in_state = false;
     }
 
     void perform_pet_motion(Modifiable& stackchan)
@@ -156,13 +147,10 @@ private:
     volatile bool _event_release = false;
 
     // 状态机相关
-    bool _in_happy_state     = false;
+    bool _in_state     = false;
     bool _is_waiting_restore = false;
     uint32_t _restore_tick   = 0;
     uint32_t _restore_delay_ms;
-    int _heart_decorator_id = -1;
-    int _shy_decorator_id   = -1;
-
     // 记忆相关
     avatar::Emotion _prev_emotion = avatar::Emotion::Neutral;
     int32_t _prev_yaw             = 0;

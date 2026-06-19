@@ -63,7 +63,17 @@ void RickEyes::setWeight(int weight)
     Feature::setWeight(weight);
 
     float blink_scale = map_range(_weight, 0, 100, 0.0f, 1.0f);
-    _image->setScaleY((uint32_t)(blink_scale * 256));
+    int32_t zoom = (int32_t)(blink_scale * 256);
+    if (_inverted_lid) {
+        zoom = -zoom;
+    }
+    lv_image_set_scale_y(_image->raw_ptr(), zoom);
+}
+
+void RickEyes::setInvertedLid(bool inverted)
+{
+    _inverted_lid = inverted;
+    setWeight(getWeight());
 }
 
 void RickEyes::setRotation(int rotation)
@@ -78,6 +88,13 @@ void RickEyes::setEmotion(const Emotion& emotion)
         return;
     }
 
+    if (emotion == Emotion::Burp) {
+        setInvertedLid(_is_left_eye);
+        setWeight(100);
+        setRotation(0);
+        return;
+    }
+    setInvertedLid(false);
     setWeight(100);
     setRotation(0);
 }

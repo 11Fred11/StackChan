@@ -43,9 +43,11 @@ public:
     void setEmotion(const Emotion& emotion) override;
     void setVisible(bool visible) override;
     void setSize(int size) override;
+    void setInvertedLid(bool inverted);
 
 private:
     bool _is_left_eye    = false;
+    bool _inverted_lid   = false;
     int _eyelid_offset_y = 0;
 
     std::unique_ptr<uitk::lvgl_cpp::Container> _container;
