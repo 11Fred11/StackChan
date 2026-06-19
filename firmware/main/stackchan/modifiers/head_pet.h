@@ -81,7 +81,7 @@ private:
             _prev_pitch     = angles.y;
 
             // Play a random Rick Sanchez SFX on the first touch of each pet session
-            playRandomRickSfx();
+            rick_sfx::playRandom();
         }
 
         // 视觉反馈

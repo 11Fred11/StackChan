@@ -12,14 +12,14 @@
 static const std::string_view _tag = "RickSFX";
 
 /* -------------------------------------------------------------------------- */
-/*  Embedded OGG data — provided by IDF EMBED_FILES (CMakeLists adds         */
-/*  assets/sfx/rick/*.ogg to COMMON_SOUNDS).                                  */
+/*  Embedded OGG data -- provided by IDF EMBED_FILES (CMakeLists adds .ogg     */
+/*  files under assets/sfx/rick/ to COMMON_SOUNDS).                            */
 /* -------------------------------------------------------------------------- */
-extern const uint8_t _sfx_burp_start[]  asm("_binary_assets_sfx_rick_burp_ogg_start");
-extern const uint8_t _sfx_burp_end[]    asm("_binary_assets_sfx_rick_burp_ogg_end");
+extern const uint8_t _sfx_burp_start[]  asm("_binary_burp_ogg_start");
+extern const uint8_t _sfx_burp_end[]    asm("_binary_burp_ogg_end");
 
-extern const uint8_t _sfx_wubba_start[] asm("_binary_assets_sfx_rick_wubba_lubba_ogg_start");
-extern const uint8_t _sfx_wubba_end[]   asm("_binary_assets_sfx_rick_wubba_lubba_ogg_end");
+extern const uint8_t _sfx_wubba_start[] asm("_binary_wubba_lubba_ogg_start");
+extern const uint8_t _sfx_wubba_end[]   asm("_binary_wubba_lubba_ogg_end");
 
 /* These string_views point directly at flash/DRAM — zero-copy playback. */
 static const std::string_view _sfx_burp{
