@@ -14,7 +14,6 @@ file(GLOB_RECURSE STACK_CHAN_SOURCES
 )
 # Exclude files that depend on the removed mooncake component
 list(REMOVE_ITEM STACK_CHAN_SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/hal/hal_account.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/hal/hal_app_center.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/hal/hal_ble.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/hal/hal_espnow.cpp"
