@@ -134,6 +134,43 @@ enum class MicTestStatus {
     Failed,
 };
 
+class BootLogo {
+public:
+    BootLogo()
+    {
+        _panel = std::make_unique<uitk::lvgl_cpp::Container>(lv_screen_active());
+        _panel->setSize(320, 240);
+        _panel->setAlign(LV_ALIGN_CENTER);
+        _panel->setBorderWidth(0);
+        _panel->setBgColor(lv_color_hex(0x000000));
+        _panel->setPaddingAll(0);
+
+        _label_logo = std::make_unique<uitk::lvgl_cpp::Label>(_panel->get());
+        _label_logo->setTextFont(&lv_font_montserrat_24);
+        _label_logo->setTextColor(lv_color_hex(0xFFFFFF));
+        _label_logo->align(LV_ALIGN_CENTER, 0, -60);
+        _label_logo->setText("STACKCHAN");
+
+        _label_msg = std::make_unique<uitk::lvgl_cpp::Label>(_panel->get());
+        _label_msg->setTextFont(&lv_font_montserrat_16);
+        _label_msg->setTextColor(lv_color_hex(0xBFBFBF));
+        _label_msg->align(LV_ALIGN_CENTER, 0, 0);
+        _label_msg->setText("Starting up...");
+
+        _label_version = std::make_unique<uitk::lvgl_cpp::Label>(_panel->get());
+        _label_version->setTextFont(&lv_font_montserrat_14);
+        _label_version->setTextColor(lv_color_hex(0x666666));
+        _label_version->align(LV_ALIGN_CENTER, 0, 90);
+        _label_version->setText("v" FIRMWARE_VERSION);
+    }
+
+private:
+    std::unique_ptr<uitk::lvgl_cpp::Container> _panel;
+    std::unique_ptr<uitk::lvgl_cpp::Label> _label_logo;
+    std::unique_ptr<uitk::lvgl_cpp::Label> _label_version;
+    std::unique_ptr<uitk::lvgl_cpp::Label> _label_msg;
+};
+
 /**
  * @brief
  *
@@ -156,6 +193,7 @@ public:
 
     /* --------------------------------- Display -------------------------------- */
     lv_indev_t* lvTouchpad = nullptr;
+    std::unique_ptr<BootLogo> bootLogo;
     void lvglLock();
     void lvglUnlock();
     void setBackLightBrightness(uint8_t brightness, bool permanent = false);
