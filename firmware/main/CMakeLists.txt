@@ -12,6 +12,8 @@ file(GLOB_RECURSE STACK_CHAN_SOURCES
     "stackchan/*.cc"
     "stackchan/*.cpp"
 )
+
+list(REMOVE_DUPLICATES STACK_CHAN_SOURCES)
 # Exclude files that depend on the removed mooncake component
 list(REMOVE_ITEM STACK_CHAN_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/hal/hal_app_center.cpp"
@@ -267,6 +269,7 @@ endif()
 file(GLOB COMMON_SOUNDS 
     ${XIAOZHI_MAIN_DIR}/assets/common/*.ogg
     assets/sfx/*.ogg
+    assets/sfx/rick/*.ogg
 )
 # Rick SFX pool — add files here to extend the pool without changing code
 file(GLOB RICK_SOUNDS "assets/sfx/rick/*.ogg")
@@ -334,6 +337,7 @@ endif()
 target_compile_definitions(${COMPONENT_LIB}
                     PRIVATE BOARD_TYPE=\"${BOARD_TYPE}\" BOARD_NAME=\"${BOARD_NAME}\"
                     PRIVATE BUILTIN_TEXT_FONT=${BUILTIN_TEXT_FONT} BUILTIN_ICON_FONT=${BUILTIN_ICON_FONT}
+                    PRIVATE LV_GIF_CACHE_DECODE_DATA=1
                     )
 
 # Add generation rules

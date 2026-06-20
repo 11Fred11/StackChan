@@ -109,6 +109,10 @@ void RickMouth::setEmotion(const Emotion& emotion)
             setWeight(0);
             setRotation(0);
             break;
+        case Emotion::Burp:
+            setWeight(70);
+            setRotation(0);
+            break;
         default:
             break;
     }

@@ -15,6 +15,7 @@
 #include <array>
 #include <lvgl_image.h>
 #include <string_view>
+#include <display/lvgl_display/gif/lvgl_gif.h>
 
 /**
  * @brief
@@ -133,10 +134,6 @@ enum class MicTestStatus {
     Failed,
 };
 
-/**
- * @brief
- *
- */
 class BootLogo {
 public:
     BootLogo()
@@ -165,7 +162,6 @@ public:
         _label_version->setTextColor(lv_color_hex(0x666666));
         _label_version->align(LV_ALIGN_CENTER, 0, 90);
         _label_version->setText("v" FIRMWARE_VERSION);
-
     }
 
 private:
