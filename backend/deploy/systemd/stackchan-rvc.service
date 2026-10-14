@@ -1,0 +1,13 @@
+[Unit]
+Description=Stack-chan RVC voice conversion (Applio)
+After=network-online.target
+
+[Service]
+Environment=APPLIO_DIR=@APPLIO@
+WorkingDirectory=@BACKEND@/services/rvc
+ExecStart=@APPLIO@/.venv/bin/python @BACKEND@/services/rvc/server.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

@@ -24,6 +24,8 @@ providers:
     model: qwen3:8b
   chatterbox:                # local voice-clone service (services/chatterbox)
     url: http://127.0.0.1:8001
+  rvc:                       # voice conversion with a trained model (services/rvc)
+    url: http://127.0.0.1:8002
   kokoro:                    # local stock voices, CPU
     model_path: models/kokoro-v1.0.onnx
     voices_path: models/voices-v1.0.bin

@@ -26,6 +26,10 @@ personas/
 Shared connection settings for the providers are in `config.yaml`. Ask the robot to "switch to Stack-chan"
 (or any persona's name) to swap; each robot remembers its persona in `state/devices.json`.
 
+A voice can also pass through a trained RVC model for a closer timbre (`convert:` in `persona.yaml`).
+`services/rvc` runs it from an [Applio](https://github.com/IAHispano/Applio) checkout, which is also used to train
+the model (`core.py preprocess / extract / train`).
+
 Voices for Chatterbox are folders of reference recordings in `voices/<name>/` (gitignored).
 Only clone voices you have the speaker's consent for.
 
