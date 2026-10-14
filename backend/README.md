@@ -3,13 +3,16 @@
 A self-hosted voice server for Stack-chan. It speaks the Xiaozhi device protocol (see
 `firmware/xiaozhi-esp32/docs/websocket.md`), so the robot only needs its config URL pointed here.
 
-Everything runs locally by default:
+Each stage is pluggable in `config.yaml`:
 
-| Stage | Engine |
-|---|---|
-| Hearing | faster-whisper `small.en` (CPU) |
-| Brain | Qwen3 8B via Ollama (GPU) |
-| Voice | Kokoro (CPU) |
+| Stage | Default | Alternative |
+|---|---|---|
+| Hearing | faster-whisper `small.en` (local CPU) | |
+| Brain | Gemini Flash (cloud, `GEMINI_API_KEY` in `.env`) | Qwen3 8B via Ollama (local GPU) |
+| Voice | Chatterbox voice clone (local GPU, `services/chatterbox`) | Kokoro stock voices (local CPU) |
+
+Voices for Chatterbox are folders of reference recordings in `voices/<name>/` (gitignored).
+Only clone voices you have the speaker's consent for.
 
 Rick's personality is `persona/rick.md`. Settings are in `config.yaml`.
 
@@ -22,6 +25,9 @@ mkdir -p models && cd models
 curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
 curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
 cd ..
+
+# voice-clone service (Python 3.11, GPU)
+(cd services/chatterbox && uv run python server.py) &
 
 uv run rick-gateway
 ```
