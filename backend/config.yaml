@@ -1,0 +1,40 @@
+# Rick gateway configuration. Secrets go in .env, never here.
+
+server:
+  host: 0.0.0.0
+  port: 8000
+  # Address the robot uses to reach this machine. Leave empty to auto-detect the LAN IP.
+  public_host: ""
+
+stt:
+  provider: whisper          # whisper (local)
+  model: small.en
+  device: cpu                # cpu keeps the GPU free for the LLM
+  compute_type: int8
+
+llm:
+  provider: ollama           # ollama (local)
+  url: http://127.0.0.1:11434
+  model: qwen3:8b
+  history_turns: 8
+
+tts:
+  provider: kokoro           # kokoro (local)
+  model_path: models/kokoro-v1.0.onnx
+  voices_path: models/voices-v1.0.bin
+  voice: am_michael
+  speed: 1.05
+
+persona: persona/rick.md
+
+vad:
+  end_silence_ms: 700        # silence after speech that ends a turn
+  no_speech_timeout_s: 10    # close the session if nobody talks
+
+tools:
+  # Device MCP tools the LLM must never call.
+  deny:
+    - self.reboot
+    - self.upgrade_firmware
+    - self.assets.set_download_url
+    - self.camera.take_photo  # needs a vision endpoint; not wired yet
