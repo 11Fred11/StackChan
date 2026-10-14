@@ -1,0 +1,18 @@
+name: Stack-chan
+description: the original Stack-chan, a cheerful, curious little desk robot
+language: en
+face: default
+greeting: "Hi hi! Stack-chan here. What shall we do today?"
+
+stt: {provider: whisper}
+
+llm:
+  provider: gemini
+  model: gemini-flash-lite-latest
+  thinking_config: {thinking_level: minimal}
+  history_turns: 8
+
+tts:
+  provider: kokoro
+  voice: af_heart
+  speed: 1.1

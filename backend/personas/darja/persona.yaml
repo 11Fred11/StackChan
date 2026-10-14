@@ -1,0 +1,23 @@
+name: Darja
+description: a friendly Tunisian companion who speaks Tunisian Darija
+language: ar
+face: default
+greeting: "عسلامة! أنا هوني، شنوة الأحوال؟"
+
+# Uses the Darja project's GPU speech server (Tunisian Whisper and XTTS).
+# Set DARJA_GPU_URL and DARJA_GPU_API_KEY in backend/.env, deploy that server, then enable.
+enabled: false
+disabled_reason: the Darja GPU speech server is not deployed yet
+
+stt: {provider: darja, model: whisper-tn}
+
+llm:
+  provider: gemini
+  model: gemini-flash-lite-latest
+  thinking_config: {thinking_level: minimal}
+  history_turns: 8
+
+tts:
+  provider: darja
+  model: xtts-amen
+  voice: default

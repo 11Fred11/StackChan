@@ -1,0 +1,43 @@
+# Gateway configuration. Secrets go in .env, never here.
+# Each persona (personas/<key>/persona.yaml) picks its own hearing, brain and voice;
+# this file holds the shared connection settings for those providers.
+
+server:
+  host: 0.0.0.0
+  port: 8000
+  # Address the robot uses to reach this machine. Leave empty to auto-detect the LAN IP.
+  public_host: ""
+
+personas:
+  dir: personas
+  default: rick
+
+providers:
+  whisper:                   # local speech-to-text
+    model: small.en
+    device: cpu              # keeps the GPU for the voice clone
+    compute_type: int8
+  gemini: {}                 # cloud brain; GEMINI_API_KEY in .env
+  ollama:                    # local brain
+    url: http://127.0.0.1:11434
+    model: qwen3:8b
+  chatterbox:                # local voice-clone service (services/chatterbox)
+    url: http://127.0.0.1:8001
+  kokoro:                    # local stock voices, CPU
+    model_path: models/kokoro-v1.0.onnx
+    voices_path: models/voices-v1.0.bin
+  darja:                     # the Darja project's GPU speech server (Tunisian)
+    url_env: DARJA_GPU_URL
+    key_env: DARJA_GPU_API_KEY
+
+vad:
+  end_silence_ms: 700        # silence after speech that ends a turn
+  no_speech_timeout_s: 10    # close the session if nobody talks
+
+tools:
+  # Device MCP tools the LLM must never call.
+  deny:
+    - self.reboot
+    - self.upgrade_firmware
+    - self.assets.set_download_url
+    - self.camera.take_photo  # needs a vision endpoint; not wired yet
