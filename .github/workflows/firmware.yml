@@ -21,6 +21,8 @@ jobs:
 
       - name: Host tests (motion math)
         run: |
+          . $IDF_PATH/export.sh            # puts cmake/ninja on PATH
+          command -v g++ || (apt-get update -qq && apt-get install -y -qq g++)
           cmake -S tests -B build-host-tests
           cmake --build build-host-tests
           ctest --test-dir build-host-tests --output-on-failure
