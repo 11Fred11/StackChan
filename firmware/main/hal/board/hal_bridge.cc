@@ -87,6 +87,12 @@ lv_disp_t* display_get_lvgl_display()
     return display->GetLvglDisplay();
 }
 
+bool display_set_face(const char* face)
+{
+    auto display = static_cast<DISPLAY_TYPE*>(Board::GetInstance().GetDisplay());
+    return display->SetFace(face);
+}
+
 void disply_lvgl_lock()
 {
     auto display = static_cast<DISPLAY_TYPE*>(Board::GetInstance().GetDisplay());

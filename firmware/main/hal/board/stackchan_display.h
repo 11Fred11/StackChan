@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 #pragma once
+#include <string>
 #include <display/lvgl_display/lvgl_display.h>
 #include <esp_lcd_panel_io.h>
 #include <esp_lcd_panel_ops.h>
@@ -19,6 +20,9 @@ private:
     bool is_sleeping_                   = false;
 
     lv_obj_t* avatar_cont_              = nullptr;
+    std::string face_;  // current avatar skin: "rick" or "default"
+
+    void CreateAvatar(const std::string& face);
 
     // Clock UI
     lv_obj_t* clock_cont_               = nullptr;
@@ -43,6 +47,8 @@ public:
 
     // Override Display methods to control Robot
     virtual void SetEmotion(const char* emotion) override;
+    // Swap the on-screen avatar skin ("rick" or "default"); remembered across reboots.
+    bool SetFace(const std::string& face);
     virtual void SetChatMessage(const char* role, const char* content) override;
     virtual void ClearChatMessages() override;
     virtual void SetPreviewImage(std::unique_ptr<LvglImage> image) override;

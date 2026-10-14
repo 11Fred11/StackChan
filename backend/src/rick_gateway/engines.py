@@ -116,6 +116,30 @@ class RemoteTTS:
         return _pcm16(resp)
 
 
+class Converted:
+    """Passes another voice through an RVC model (services/rvc) for a closer timbre.
+
+    If the converter is down, the unconverted voice is used rather than failing.
+    """
+
+    def __init__(self, voice, cfg: dict) -> None:
+        self._voice = voice
+        self._url = cfg["url"].rstrip("/") + "/convert"
+        self._params = {k: cfg[k] for k in ("model", "pitch", "index_rate", "protect") if k in cfg}
+        self._client = httpx.Client(timeout=60)
+
+    def synthesize(self, text: str, emotion: str = "neutral") -> tuple[np.ndarray, int]:
+        audio, rate = self._voice.synthesize(text, emotion)
+        pcm = (np.clip(audio, -1, 1) * 32767).astype(np.int16).tobytes()
+        try:
+            resp = self._client.post(self._url, params=self._params, content=pcm, headers={"X-Sample-Rate": str(rate)})
+            resp.raise_for_status()
+        except httpx.HTTPError as e:
+            log.warning("voice conversion failed (%s); using the unconverted voice", e)
+            return audio, rate
+        return _pcm16(resp)
+
+
 class WithFallback:
     """Uses a second voice when the first fails, so the robot never goes mute."""
 
@@ -247,6 +271,26 @@ class GeminiLLM:
                         yield LLMEvent(text=part.text)
 
 
+async def describe_image(cfg: dict, jpeg: bytes, question: str) -> str:
+    """Answers a question about a photo from the robot's camera (Gemini vision)."""
+    from google import genai
+    from google.genai import types
+
+    if cfg["provider"] != "gemini":
+        raise ValueError(f"vision provider '{cfg['provider']}' is not supported yet")
+    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    prompt = (
+        "This photo was just taken by a small desk robot's camera, facing the person talking to it. "
+        "Answer the question about it factually and briefly (two or three sentences). "
+        f"Question: {question or 'What do you see?'}"
+    )
+    resp = await client.aio.models.generate_content(
+        model=cfg["model"],
+        contents=[types.Part.from_bytes(data=jpeg, mime_type="image/jpeg"), prompt],
+    )
+    return (resp.text or "").strip()
+
+
 STT = {"whisper": WhisperSTT, "darja": RemoteSTT}
 LLM = {"gemini": GeminiLLM, "ollama": OllamaLLM}
 TTS = {"kokoro": KokoroTTS, "chatterbox": ChatterboxTTS, "darja": RemoteTTS}
@@ -309,6 +353,9 @@ class Personas:
     def _build(self, key: str, spec: dict) -> Persona:
         folder = self._dir / key
         tts = self._stage(TTS, spec["tts"])
+        if "convert" in spec["tts"]:
+            convert = spec["tts"]["convert"]
+            tts = Converted(tts, {**self._providers.get(convert["provider"], {}), **convert})
         if "fallback" in spec["tts"]:
             tts = WithFallback(tts, self._stage(TTS, spec["tts"]["fallback"]))
         sfx = {}

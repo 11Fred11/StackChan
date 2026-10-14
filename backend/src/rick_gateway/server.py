@@ -11,9 +11,9 @@ from pathlib import Path
 import uvicorn
 import yaml
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request, WebSocket
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, WebSocket
 
-from .engines import Personas
+from .engines import Personas, describe_image
 from .session import Session
 
 log = logging.getLogger("rick_gateway")
@@ -30,8 +30,9 @@ def lan_ip() -> str:
         return s.getsockname()[0]
 
 
-PUBLIC_HOST = CFG["server"]["public_host"] or lan_ip()
+PUBLIC_HOST = os.environ.get("GATEWAY_PUBLIC_HOST") or CFG["server"]["public_host"] or lan_ip()
 WS_URL = f"ws://{PUBLIC_HOST}:{CFG['server']['port']}/xiaozhi/v1/"
+VISION_URL = f"http://{PUBLIC_HOST}:{CFG['server']['port']}/vision/explain"
 
 
 @asynccontextmanager
@@ -65,6 +66,18 @@ async def ota(request: Request) -> dict:
     }
 
 
+@app.post("/vision/explain")
+async def vision(request: Request, question: str = Form(""), file: UploadFile = File(...)) -> dict:
+    """The robot's camera tool uploads a photo and a question here; the answer goes back to the brain."""
+    if request.headers.get("authorization", "").removeprefix("Bearer ").strip() != TOKEN:
+        raise HTTPException(401, "bad token")
+    image = await file.read()
+    log.info("photo from %s (%d bytes): %s", request.headers.get("Device-Id"), len(image), question)
+    answer = await describe_image(CFG["vision"], image, question)
+    log.info("vision: %s", answer)
+    return {"success": True, "text": answer}
+
+
 @app.websocket("/xiaozhi/v1/")
 async def voice(ws: WebSocket) -> None:
     auth = ws.headers.get("authorization", "")
@@ -75,7 +88,7 @@ async def voice(ws: WebSocket) -> None:
     device_id = ws.headers.get("device-id", "unknown")
     await ws.accept()
     log.info("[%s] session opened", device_id)
-    await Session(ws, app.state.personas, CFG, device_id).run()
+    await Session(ws, app.state.personas, CFG, device_id, vision={"url": VISION_URL, "token": TOKEN}).run()
 
 
 def main() -> None:

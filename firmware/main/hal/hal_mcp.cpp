@@ -8,6 +8,7 @@
 #include <mooncake_log.h>
 #include <mcp_server.h>
 #include <stackchan/stackchan.h>
+#include "board/hal_bridge.h"
 
 using namespace stackchan;
 
@@ -104,6 +105,17 @@ void Hal::xiaozhi_mcp_init()
             showStatusOverlay(*this);
             return std::string(R"({"status": "ok"})");
         });
+
+    // The gateway calls this when switching personas, so the face matches the voice.
+    mclog::tagInfo(_tag, "add avatar.set_face tool");
+    mcp_server.AddTool("self.avatar.set_face",
+                       "Change the face shown on the screen. face: 'rick' (Rick Sanchez) or 'default' (classic Stack-chan).",
+                       PropertyList({Property("face", kPropertyTypeString, std::string("rick"))}),
+                       [](const PropertyList& properties) -> ReturnValue {
+                           auto face = properties["face"].value<std::string>();
+                           mclog::tagInfo(_tag, "set_face: {}", face);
+                           return hal_bridge::display_set_face(face.c_str());
+                       });
 
 
 }

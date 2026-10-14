@@ -1,0 +1,13 @@
+[Unit]
+Description=Stack-chan voice gateway (Xiaozhi protocol)
+After=network-online.target stackchan-voice.service
+Wants=stackchan-voice.service
+
+[Service]
+WorkingDirectory=@BACKEND@
+ExecStart=@BACKEND@/.venv/bin/rick-gateway
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

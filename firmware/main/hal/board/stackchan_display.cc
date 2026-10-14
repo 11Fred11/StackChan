@@ -17,6 +17,7 @@
 #include <lvgl_theme.h>
 #include <stackchan/stackchan.h>
 #include <stackchan/avatar/skins/rick/rick.h>
+#include <stackchan/avatar/skins/default/default.h>
 #include <assets/lang_config.h>
 #include <hal/hal.h>
 
@@ -330,22 +331,7 @@ void StackChanAvatarDisplay::SetupUI()
     // Keep boot logo visible on top during init; destroy it when STANDBY is reached
     lv_obj_move_background(avatar_cont_);
 
-    auto avatar = std::make_unique<RickAvatar>();
-    avatar->init(avatar_cont_);
-    avatar->getPanel()->onClick().connect([]() {
-        static uint32_t last_toggle_tick = 0;
-        const uint32_t now               = GetHAL().millis();
-        if (last_toggle_tick != 0 && now - last_toggle_tick < 500) {
-            return;
-        }
-
-        if (hal_bridge::is_xiaozhi_ready()) {
-            last_toggle_tick = now;
-            hal_bridge::toggle_xiaozhi_chat_state();
-        }
-    });
-
-    stackchan.attachAvatar(std::move(avatar));
+    CreateAvatar(Settings("stackchan", false).GetString("face", "rick"));
     stackchan.addModifier(std::make_unique<BreathModifier>());
     blink_modifier_id_ = stackchan.addModifier(std::make_unique<BlinkModifier>());
     stackchan.addModifier(std::make_unique<HeadPetModifier>());
@@ -359,6 +345,60 @@ void StackChanAvatarDisplay::SetupUI()
     CreateClockUI();
 
     ESP_LOGI(TAG, "Avatar and clock UI created");
+}
+
+template <typename Skin>
+static std::unique_ptr<Avatar> make_avatar(lv_obj_t* parent)
+{
+    auto avatar = std::make_unique<Skin>();
+    avatar->init(parent);
+    avatar->getPanel()->onClick().connect([]() {
+        static uint32_t last_toggle_tick = 0;
+        const uint32_t now               = GetHAL().millis();
+        if (last_toggle_tick != 0 && now - last_toggle_tick < 500) {
+            return;
+        }
+
+        if (hal_bridge::is_xiaozhi_ready()) {
+            last_toggle_tick = now;
+            hal_bridge::toggle_xiaozhi_chat_state();
+        }
+    });
+    return avatar;
+}
+
+void StackChanAvatarDisplay::CreateAvatar(const std::string& face)
+{
+    face_ = face == "default" ? "default" : "rick";
+    if (face_ == "default") {
+        GetStackChan().attachAvatar(make_avatar<DefaultAvatar>(avatar_cont_));
+    } else {
+        GetStackChan().attachAvatar(make_avatar<RickAvatar>(avatar_cont_));
+    }
+}
+
+bool StackChanAvatarDisplay::SetFace(const std::string& face)
+{
+    if (face != "rick" && face != "default") {
+        ESP_LOGW(TAG, "Unknown face: %s", face.c_str());
+        return false;
+    }
+    Settings("stackchan", true).SetString("face", face);
+    if (face == face_ || avatar_cont_ == nullptr) {
+        return true;
+    }
+
+    DisplayLockGuard lock(this);
+    auto& stackchan = GetStackChan();
+    stackchan.resetAvatar();
+    CreateAvatar(face);
+
+    auto blink_modifier = static_cast<BlinkModifier*>(stackchan.getModifier(blink_modifier_id_));
+    if (blink_modifier) {
+        blink_modifier->resyncEyeWeights();
+    }
+    ESP_LOGI(TAG, "Face set to %s", face.c_str());
+    return true;
 }
 
 void StackChanAvatarDisplay::LvglLock()

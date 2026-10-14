@@ -1,0 +1,4 @@
+# Copy to sdkconfig.defaults.local (git-ignored) to point the robot at your own gateway.
+# Use a hostname your router resolves (Livebox: <pc-hostname>.home) so the PC's IP can change.
+# After editing, delete firmware/sdkconfig so the new defaults are applied, then build.
+CONFIG_OTA_URL="http://omarchy.home:8000/xiaozhi/ota/"

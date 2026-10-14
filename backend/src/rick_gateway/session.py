@@ -83,8 +83,9 @@ def switch_tool(available: dict[str, str]) -> dict:
 
 
 class Session:
-    def __init__(self, ws: WebSocket, personas: Personas, cfg: dict, device_id: str) -> None:
+    def __init__(self, ws: WebSocket, personas: Personas, cfg: dict, device_id: str, vision: dict | None = None) -> None:
         self.ws = ws
+        self.vision = vision
         self.personas = personas
         self.persona: Persona = personas.get(DeviceState.persona(device_id) or personas.default)
         self.switch_to: str | None = None
@@ -276,7 +277,7 @@ class Session:
 
     # ---- MCP (device tools) -------------------------------------------
 
-    async def mcp_request(self, method: str, params: dict, timeout: float = 10) -> dict:
+    async def mcp_request(self, method: str, params: dict, timeout: float = 20) -> dict:
         self._mcp_id += 1
         req_id = self._mcp_id
         fut = asyncio.get_running_loop().create_future()
@@ -295,7 +296,8 @@ class Session:
 
     async def _discover_tools(self) -> None:
         try:
-            await self.mcp_request("initialize", {"protocolVersion": "2024-11-05", "capabilities": {}})
+            capabilities = {"vision": self.vision} if self.vision else {}
+            await self.mcp_request("initialize", {"protocolVersion": "2024-11-05", "capabilities": capabilities})
             cursor, device_tools = None, []
             while True:
                 params = {"cursor": cursor} if cursor else {}

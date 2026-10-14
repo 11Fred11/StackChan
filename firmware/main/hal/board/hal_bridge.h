@@ -49,6 +49,7 @@ bool is_xiaozhi_mode();
 void set_xiaozhi_mode(bool mode);
 void toggle_xiaozhi_chat_state();
 
+bool display_set_face(const char* face);
 void disply_lvgl_lock();
 void disply_lvgl_unlock();
 lv_disp_t* display_get_lvgl_display();

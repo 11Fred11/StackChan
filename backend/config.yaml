@@ -5,7 +5,8 @@
 server:
   host: 0.0.0.0
   port: 8000
-  # Address the robot uses to reach this machine. Leave empty to auto-detect the LAN IP.
+  # Address the robot uses to reach this machine (GATEWAY_PUBLIC_HOST in .env overrides it).
+  # Leave empty to auto-detect the LAN IP.
   public_host: ""
 
 personas:
@@ -23,12 +24,18 @@ providers:
     model: qwen3:8b
   chatterbox:                # local voice-clone service (services/chatterbox)
     url: http://127.0.0.1:8001
+  rvc:                       # voice conversion with a trained model (services/rvc)
+    url: http://127.0.0.1:8002
   kokoro:                    # local stock voices, CPU
     model_path: models/kokoro-v1.0.onnx
     voices_path: models/voices-v1.0.bin
   darja:                     # the Darja project's GPU speech server (Tunisian)
     url_env: DARJA_GPU_URL
     key_env: DARJA_GPU_API_KEY
+
+vision:                      # answers questions about photos from the robot's camera
+  provider: gemini
+  model: gemini-flash-lite-latest
 
 vad:
   end_silence_ms: 700        # silence after speech that ends a turn
@@ -40,4 +47,3 @@ tools:
     - self.reboot
     - self.upgrade_firmware
     - self.assets.set_download_url
-    - self.camera.take_photo  # needs a vision endpoint; not wired yet
