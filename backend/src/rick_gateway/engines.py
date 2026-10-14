@@ -247,6 +247,26 @@ class GeminiLLM:
                         yield LLMEvent(text=part.text)
 
 
+async def describe_image(cfg: dict, jpeg: bytes, question: str) -> str:
+    """Answers a question about a photo from the robot's camera (Gemini vision)."""
+    from google import genai
+    from google.genai import types
+
+    if cfg["provider"] != "gemini":
+        raise ValueError(f"vision provider '{cfg['provider']}' is not supported yet")
+    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    prompt = (
+        "This photo was just taken by a small desk robot's camera, facing the person talking to it. "
+        "Answer the question about it factually and briefly (two or three sentences). "
+        f"Question: {question or 'What do you see?'}"
+    )
+    resp = await client.aio.models.generate_content(
+        model=cfg["model"],
+        contents=[types.Part.from_bytes(data=jpeg, mime_type="image/jpeg"), prompt],
+    )
+    return (resp.text or "").strip()
+
+
 STT = {"whisper": WhisperSTT, "darja": RemoteSTT}
 LLM = {"gemini": GeminiLLM, "ollama": OllamaLLM}
 TTS = {"kokoro": KokoroTTS, "chatterbox": ChatterboxTTS, "darja": RemoteTTS}

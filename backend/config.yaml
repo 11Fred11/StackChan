@@ -31,6 +31,10 @@ providers:
     url_env: DARJA_GPU_URL
     key_env: DARJA_GPU_API_KEY
 
+vision:                      # answers questions about photos from the robot's camera
+  provider: gemini
+  model: gemini-flash-lite-latest
+
 vad:
   end_silence_ms: 700        # silence after speech that ends a turn
   no_speech_timeout_s: 10    # close the session if nobody talks
@@ -41,4 +45,3 @@ tools:
     - self.reboot
     - self.upgrade_firmware
     - self.assets.set_download_url
-    - self.camera.take_photo  # needs a vision endpoint; not wired yet
