@@ -10,10 +10,14 @@ import re
 import time
 import uuid
 
+import httpx
 from fastapi import WebSocket, WebSocketDisconnect
 
 from pathlib import Path
 
+from datetime import datetime
+
+from . import actions
 from .audio import DOWNLINK_RATE, FRAME_MS, Endpointer, OpusIn, OpusOut
 from .engines import Persona, Personas
 
@@ -105,7 +109,7 @@ class Session:
         self.listen_started_at = 0.0
         self.turn: asyncio.Task | None = None
         self.deny = set(cfg["tools"]["deny"])
-        self.tools: list[dict] = [END_TOOL]
+        self.tools: list[dict] = [END_TOOL, *actions.LOCAL_TOOLS]
         if len(personas.available) > 1:
             self.tools.append(switch_tool(personas.available))
         self.ending = False
@@ -261,14 +265,24 @@ class Session:
             await speaker.feed("😊 " + self.persona.greeting)
             await speaker.finish()
 
+    def _system_prompt(self) -> str:
+        home = self.cfg.get("home", {})
+        now = datetime.now().astimezone()
+        where = f" The user lives in {home['city']}." if home.get("city") else ""
+        return f"{self.persona.prompt}\n\nIt is {now:%A %d %B %Y, %H:%M} ({now:%Z}).{where}"
+
     async def _think(self, text: str, speaker: "Speaker") -> str:
-        messages = [{"role": "system", "content": self.persona.prompt}, *self.history, {"role": "user", "content": text}]
+        messages = [{"role": "system", "content": self._system_prompt()}, *self.history, {"role": "user", "content": text}]
+        names = {t["function"]["name"] for t in self.tools}
+        force = actions.required_tools(text, names)
+        if force:
+            log.info("[%s] action request -> must use one of %s", self.device_id, force)
         spoken = ""
         for round_ in range(MAX_TOOL_ROUNDS):
             content, calls = "", []
             # Offer tools only on the first round; small models otherwise repeat the call.
             tools = self.tools if round_ == 0 else []
-            async for event in self.persona.llm.stream(messages, tools):
+            async for event in self.persona.llm.stream(messages, tools, force if round_ == 0 else None):
                 content += event.text
                 calls += event.tool_calls
                 await speaker.feed(event.text)
@@ -340,6 +354,20 @@ class Session:
             log.info("[%s] ending conversation", self.device_id)
             self.ending = True
             return "ok, say goodbye now"
+        if safe_name == "get_weather":
+            log.info("[%s] weather %s", self.device_id, arguments)
+            try:
+                return await actions.get_weather(arguments.get("city", ""), self.cfg.get("home", {}))
+            except httpx.HTTPError as e:
+                return f"Weather service unreachable: {e}"
+        if safe_name == "gesture":
+            if "self_robot_set_head_angles" not in self.tool_names:
+                return "This robot can't move its head."
+            log.info("[%s] gesture %s", self.device_id, arguments)
+            return await actions.gesture(
+                arguments.get("kind", "nod"),
+                lambda yaw, pitch: self.call_tool("self_robot_set_head_angles", {"yaw": yaw, "pitch": pitch, "speed": 400}),
+            )
         if safe_name == "switch_persona":
             key = arguments.get("persona", "")
             if key not in self.personas.available:

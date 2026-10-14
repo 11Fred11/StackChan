@@ -33,6 +33,11 @@ providers:
     url_env: DARJA_GPU_URL
     key_env: DARJA_GPU_API_KEY
 
+home:                        # for weather and local context; set your city
+  city: ""
+  latitude: null
+  longitude: null
+
 vision:                      # answers questions about photos from the robot's camera
   provider: gemini
   model: gemini-flash-lite-latest

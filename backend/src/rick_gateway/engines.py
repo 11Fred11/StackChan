@@ -202,7 +202,7 @@ class OllamaLLM:
         self._model = cfg["model"]
         self._client = httpx.AsyncClient(timeout=120)
 
-    async def stream(self, messages: list[dict], tools: list[dict]) -> AsyncIterator[LLMEvent]:
+    async def stream(self, messages: list[dict], tools: list[dict], force: list[str] | None = None) -> AsyncIterator[LLMEvent]:
         body = {"model": self._model, "messages": messages, "think": False, "keep_alive": "60m", "stream": True}
         if tools:
             body["tools"] = tools
@@ -254,7 +254,7 @@ class GeminiLLM:
                     contents.append(types.Content(role="user", parts=[part]))
         return system, contents
 
-    async def stream(self, messages: list[dict], tools: list[dict]) -> AsyncIterator[LLMEvent]:
+    async def stream(self, messages: list[dict], tools: list[dict], force: list[str] | None = None) -> AsyncIterator[LLMEvent]:
         from google.genai import types
 
         system, contents = self._convert(messages)
@@ -273,6 +273,11 @@ class GeminiLLM:
                 )
             ]
             config.automatic_function_calling = types.AutomaticFunctionCallingConfig(disable=True)
+            if force:
+                # The user clearly asked for an action: the first step must be one of these tools.
+                config.tool_config = types.ToolConfig(
+                    function_calling_config=types.FunctionCallingConfig(mode="ANY", allowed_function_names=force)
+                )
         if self._thinking:
             config.thinking_config = types.ThinkingConfig(**self._thinking)
         stream = await self._client.aio.models.generate_content_stream(model=self._model, contents=contents, config=config)
