@@ -26,7 +26,7 @@ tts:
   provider: chatterbox       # chatterbox (local voice clone, GPU) | kokoro (local stock voices, CPU)
   chatterbox:
     url: http://127.0.0.1:8001     # services/chatterbox
-    preset: rick-expressive
+    preset: rick-angry
     # voice = a folder of reference .wav files in voices/; reference = which file (default: longest)
     presets:
       rick-v1:                     # first clone; calm but solid (tag rick-voice-v1)
@@ -44,6 +44,14 @@ tts:
         exaggeration: 0.9
         cfg_weight: 0.3
         temperature: 0.9
+        emotion_exaggeration:      # the brain's mood sets how intense each reply sounds
+          angry: 1.2
+          laughing: 1.1
+          happy: 1.0
+          doubtful: 0.8
+          sad: 0.6
+          crying: 0.7
+          sleepy: 0.5
       rick-max:                    # clip D
         voice: rick
         exaggeration: 1.2
@@ -56,6 +64,9 @@ tts:
     speed: 1.05
 
 persona: persona/rick.md
+
+sfx:
+  burp: ../firmware/main/assets/sfx/rick/burp.ogg
 
 vad:
   end_silence_ms: 700        # silence after speech that ends a turn

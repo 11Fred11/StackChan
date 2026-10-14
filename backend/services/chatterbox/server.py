@@ -26,7 +26,7 @@ DEVICE = os.environ.get("CHATTERBOX_DEVICE", "cuda" if torch.cuda.is_available()
 
 model = ChatterboxTTS.from_pretrained(device=DEVICE)
 lock = threading.Lock()  # one generation at a time; the model is not thread-safe
-loaded_voice: tuple | None = None
+conds_cache: dict[tuple, object] = {}
 app = FastAPI()
 
 
@@ -53,14 +53,14 @@ def reference_for(voice: str, reference: str | None) -> Path:
 
 @app.post("/tts")
 def tts(req: Req) -> Response:
-    global loaded_voice
     with lock:
         key = (req.voice, req.reference, req.exaggeration)
-        if loaded_voice != key:
+        if key not in conds_cache:
             ref = reference_for(req.voice, req.reference)
-            log.info("loading voice %s from %s", req.voice, ref.name)
+            log.info("preparing voice %s from %s (exaggeration %.2f)", req.voice, ref.name, req.exaggeration)
             model.prepare_conditionals(str(ref), exaggeration=req.exaggeration)
-            loaded_voice = key
+            conds_cache[key] = model.conds
+        model.conds = conds_cache[key]
         with torch.inference_mode():
             wav = model.generate(
                 req.text, exaggeration=req.exaggeration, cfg_weight=req.cfg_weight, temperature=req.temperature

@@ -31,7 +31,7 @@ class KokoroTTS:
         self._voice = cfg["voice"]
         self._speed = cfg["speed"]
 
-    def synthesize(self, text: str) -> tuple[np.ndarray, int]:
+    def synthesize(self, text: str, emotion: str = "neutral") -> tuple[np.ndarray, int]:
         audio, sample_rate = self._kokoro.create(text, voice=self._voice, speed=self._speed, lang="en-us")
         return audio.astype(np.float32), sample_rate
 
@@ -44,10 +44,14 @@ class ChatterboxTTS:
         preset = cfg["presets"][cfg["preset"]]
         self._voice = preset["voice"]
         self._params = {k: preset[k] for k in ("reference", "exaggeration", "cfg_weight", "temperature") if k in preset}
+        self._by_emotion = preset.get("emotion_exaggeration", {})
         self._client = httpx.Client(timeout=60)
 
-    def synthesize(self, text: str) -> tuple[np.ndarray, int]:
-        resp = self._client.post(self._url, json={"text": text, "voice": self._voice, **self._params})
+    def synthesize(self, text: str, emotion: str = "neutral") -> tuple[np.ndarray, int]:
+        params = dict(self._params)
+        if emotion in self._by_emotion:
+            params["exaggeration"] = self._by_emotion[emotion]
+        resp = self._client.post(self._url, json={"text": text, "voice": self._voice, **params})
         resp.raise_for_status()
         rate = int(resp.headers["X-Sample-Rate"])
         return np.frombuffer(resp.content, dtype=np.int16).astype(np.float32) / 32768.0, rate
@@ -174,6 +178,7 @@ class Engines:
     llm: "OllamaLLM | GeminiLLM"
     tts: "KokoroTTS | ChatterboxTTS"
     persona: str
+    sfx: dict[str, tuple[np.ndarray, int]]
 
 
 LLMS = {"ollama": OllamaLLM, "gemini": GeminiLLM}
@@ -191,4 +196,14 @@ def load_engines(cfg: dict, persona: str) -> Engines:
     tts_cfg = cfg["tts"][cfg["tts"]["provider"]]
     log.info("Voice: %s (%s)", cfg["tts"]["provider"], tts_cfg.get("preset") or tts_cfg.get("voice"))
     tts = TTSS[cfg["tts"]["provider"]](tts_cfg)
-    return Engines(stt=stt, llm=llm, tts=tts, persona=persona)
+    return Engines(stt=stt, llm=llm, tts=tts, persona=persona, sfx=load_sfx(cfg.get("sfx", {})))
+
+
+def load_sfx(paths: dict[str, str]) -> dict[str, tuple[np.ndarray, int]]:
+    import soundfile as sf
+
+    sfx = {}
+    for name, path in paths.items():
+        audio, rate = sf.read(path, dtype="float32")
+        sfx[name] = (audio.mean(axis=1) if audio.ndim > 1 else audio, rate)
+    return sfx

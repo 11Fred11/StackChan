@@ -19,10 +19,12 @@ log = logging.getLogger(__name__)
 
 EMOTIONS = {"😐": "neutral", "😊": "happy", "😂": "laughing", "😠": "angry", "😢": "sad", "😭": "crying", "😴": "sleepy", "🤔": "doubtful"}
 SENTENCE_END = re.compile(r"(?<=[.!?…])\s+|\n+")
+BURP = re.compile(r"\*?\b(?:bu+r+p+|u+r+p+)\b\*?[,.!]?", re.IGNORECASE)
 STAGE_DIRECTION = re.compile(r"\*[^*]*\*")
 # Small local models sometimes write a tool name instead of calling it.
 TOOL_AS_TEXT = re.compile(r"\bend[_ ]conversation\b\W*", re.IGNORECASE)
 NON_SPEECH = re.compile(r"[^\w\s.,!?'’\-…:;\"()]")
+SFX_BURP = "\x00burp"
 MAX_TOOL_ROUNDS = 3
 END_TOOL = {
     "type": "function",
@@ -281,6 +283,7 @@ class Speaker:
         self.opus_out = OpusOut()
         self.buffer = ""
         self.emotion_done = False
+        self.emotion = "neutral"
         self.queued_any = False
         self.started = False
         self.queue: asyncio.Queue[str | None] = asyncio.Queue()
@@ -300,6 +303,7 @@ class Speaker:
             if not stripped:
                 return  # mood emoji still arriving
             emotion = EMOTIONS.get(stripped[0], "neutral")
+            self.emotion = emotion
             self.buffer = stripped[1:] if stripped[0] in EMOTIONS else stripped
             self.emotion_done = True
             await self.s.send_json({"type": "llm", "emotion": emotion, "text": ""})
@@ -315,10 +319,15 @@ class Speaker:
                 self.buffer = self.buffer[cut + 2 :]
 
     async def _queue(self, sentence: str) -> None:
-        sentence = self.clean(sentence)
-        if sentence:
-            self.queued_any = True
-            await self.queue.put(sentence)
+        # Real burp sound effects wherever the text says "burp".
+        pieces = BURP.split(sentence)
+        for i, piece in enumerate(pieces):
+            if i > 0 and "burp" in self.s.engines.sfx:
+                await self.queue.put(SFX_BURP)
+            piece = self.clean(piece)
+            if piece:
+                self.queued_any = True
+                await self.queue.put(piece)
 
     async def finish(self) -> None:
         await self._queue(self.buffer)
@@ -330,7 +339,11 @@ class Speaker:
 
     async def _play(self) -> None:
         while (sentence := await self.queue.get()) is not None:
-            audio, rate = await asyncio.to_thread(self.s.engines.tts.synthesize, sentence)
+            if sentence == SFX_BURP:
+                audio, rate = self.s.engines.sfx["burp"]
+                sentence = "*burp*"
+            else:
+                audio, rate = await asyncio.to_thread(self.s.engines.tts.synthesize, sentence, self.emotion)
             frames = self.opus_out.encode(audio, rate)
             if not self.started:
                 self.started = True
