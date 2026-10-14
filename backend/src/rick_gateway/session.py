@@ -291,7 +291,7 @@ class Speaker:
     @staticmethod
     def clean(text: str) -> str:
         text = TOOL_AS_TEXT.sub("", STAGE_DIRECTION.sub("", text))
-        return re.sub(r"\s+", " ", NON_SPEECH.sub("", text)).strip()
+        return re.sub(r"\s+", " ", NON_SPEECH.sub("", text)).strip().lstrip(",;: ")
 
     async def feed(self, text: str) -> None:
         self.buffer += text
