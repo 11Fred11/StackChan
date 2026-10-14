@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 EMOTIONS = {"😐": "neutral", "😊": "happy", "😂": "laughing", "😠": "angry", "😢": "sad", "😭": "crying", "😴": "sleepy", "🤔": "doubtful"}
 SENTENCE_END = re.compile(r"(?<=[.!?…])\s+|\n+")
 BURP = re.compile(r"\*?\b(?:bu+r+p+|u+r+p+)\b\*?[,.!]?", re.IGNORECASE)
-STAGE_DIRECTION = re.compile(r"\*[^*]*\*")
+STAGE_DIRECTION = re.compile(r"\*[^*]*\*|\{[^}]*\}|\[[^\]]*\]")
 # Small local models sometimes write a tool name instead of calling it.
 TOOL_AS_TEXT = re.compile(r"\bend[_ ]conversation\b\W*", re.IGNORECASE)
 NON_SPEECH = re.compile(r"[^\w\s.,!?'’\-…:;\"()]")
