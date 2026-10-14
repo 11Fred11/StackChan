@@ -16,17 +16,17 @@ llm:
   provider: gemini           # gemini (cloud, needs GEMINI_API_KEY in .env) | ollama (local)
   history_turns: 8
   gemini:
-    model: gemini-2.5-flash
-    thinking_config: {thinking_budget: 0}   # no thinking: fastest replies
+    model: gemini-flash-lite-latest
+    thinking_config: {thinking_level: minimal}   # fastest replies (~0.5–0.8 s to first word)
   ollama:
     url: http://127.0.0.1:11434
     model: qwen3:8b
 
 tts:
-  provider: chatterbox       # chatterbox (local voice clone, GPU) | kokoro (local stock voices, CPU)
+  provider: kokoro           # kokoro (local stock voices, CPU) | chatterbox (local voice clone, GPU)
   chatterbox:
     url: http://127.0.0.1:8001     # services/chatterbox
-    voice: rick                    # a folder of reference .wav files in voices/
+    voice: placeholder             # a folder of reference .wav files in voices/
     exaggeration: 0.6
     cfg_weight: 0.4
   kokoro:
