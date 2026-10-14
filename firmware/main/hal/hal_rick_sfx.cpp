@@ -22,7 +22,7 @@ extern const uint8_t _sfx_wubba_start[] asm("_binary_wubba_lubba_ogg_start");
 extern const uint8_t _sfx_wubba_end[]   asm("_binary_wubba_lubba_ogg_end");
 
 /* These string_views point directly at flash/DRAM — zero-copy playback. */
-static const std::string_view _sfx_burp{
+[[maybe_unused]] static const std::string_view _sfx_burp{
     reinterpret_cast<const char*>(_sfx_burp_start),
     static_cast<std::size_t>(_sfx_burp_end - _sfx_burp_start)
 };
@@ -85,10 +85,8 @@ bool playRandom()
         _clear_timer = nullptr;
     }
 
-    /* Pick a clip at random; simple alternating counter avoids stdlib rand(). */
-    static uint8_t _pick = 0;
-    _pick ^= 1u;
-    const std::string_view& sound = (_pick == 0) ? _sfx_burp : _sfx_wubba;
+    /* Burp removed at Fred's request (2026-10-14): head pats only play "Wubba Lubba Dub Dub". */
+    const std::string_view& sound = _sfx_wubba;
 
     /* Set the guard BEFORE firing audio so concurrent callers are blocked. */
     _playing = true;
@@ -99,7 +97,7 @@ bool playRandom()
     _clear_timer = lv_timer_create(on_sfx_done, _SFX_BLOCK_MS, nullptr);
     lv_timer_set_repeat_count(_clear_timer, 1);
 
-    mclog::tagInfo(_tag, "playRandom: {} bytes, clip {}", sound.size(), (int)_pick);
+    mclog::tagInfo(_tag, "playRandom: {} bytes", sound.size());
 
     /* PlaySound is non-blocking — it queues the audio on the XiaoZhi audio
      * service and returns immediately.  Calling it while holding the LVGL

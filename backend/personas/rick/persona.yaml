@@ -54,5 +54,4 @@ tts:
   convert: {provider: rvc, model: rick-friend, index_rate: 0.6, protect: 0.33}
   fallback: {provider: kokoro, voice: am_michael, speed: 1.05}
 
-sfx:
-  burp: ../../../firmware/main/assets/sfx/rick/burp.ogg
+# No sound effects: the burp was removed at Fred's request (2026-10-14).
