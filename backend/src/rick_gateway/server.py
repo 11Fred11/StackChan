@@ -10,6 +10,7 @@ from pathlib import Path
 
 import uvicorn
 import yaml
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request, WebSocket
 
 from .engines import load_engines
@@ -18,6 +19,7 @@ from .session import Session
 log = logging.getLogger("rick_gateway")
 
 ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(ROOT / ".env")
 CFG = yaml.safe_load((ROOT / "config.yaml").read_text())
 TOKEN = os.environ.get("RICK_GATEWAY_TOKEN", "local-dev")
 

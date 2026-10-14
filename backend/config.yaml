@@ -13,17 +13,27 @@ stt:
   compute_type: int8
 
 llm:
-  provider: ollama           # ollama (local)
-  url: http://127.0.0.1:11434
-  model: qwen3:8b
+  provider: gemini           # gemini (cloud, needs GEMINI_API_KEY in .env) | ollama (local)
   history_turns: 8
+  gemini:
+    model: gemini-2.5-flash
+    thinking_config: {thinking_budget: 0}   # no thinking: fastest replies
+  ollama:
+    url: http://127.0.0.1:11434
+    model: qwen3:8b
 
 tts:
-  provider: kokoro           # kokoro (local)
-  model_path: models/kokoro-v1.0.onnx
-  voices_path: models/voices-v1.0.bin
-  voice: am_michael
-  speed: 1.05
+  provider: chatterbox       # chatterbox (local voice clone, GPU) | kokoro (local stock voices, CPU)
+  chatterbox:
+    url: http://127.0.0.1:8001     # services/chatterbox
+    voice: rick                    # a folder of reference .wav files in voices/
+    exaggeration: 0.6
+    cfg_weight: 0.4
+  kokoro:
+    model_path: models/kokoro-v1.0.onnx
+    voices_path: models/voices-v1.0.bin
+    voice: am_michael
+    speed: 1.05
 
 persona: persona/rick.md
 
