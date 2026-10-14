@@ -20,8 +20,18 @@ log = logging.getLogger(__name__)
 EMOTIONS = {"😐": "neutral", "😊": "happy", "😂": "laughing", "😠": "angry", "😢": "sad", "😭": "crying", "😴": "sleepy", "🤔": "doubtful"}
 SENTENCE_END = re.compile(r"(?<=[.!?…])\s+|\n+")
 STAGE_DIRECTION = re.compile(r"\*[^*]*\*")
+# Small local models sometimes write a tool name instead of calling it.
+TOOL_AS_TEXT = re.compile(r"\bend[_ ]conversation\b\W*", re.IGNORECASE)
 NON_SPEECH = re.compile(r"[^\w\s.,!?'’\-…:;\"()]")
 MAX_TOOL_ROUNDS = 3
+END_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "end_conversation",
+        "description": "Stop listening and go idle. Call when the user says goodbye, asks you to sleep, or is done talking. Say a short goodbye too.",
+        "parameters": {"type": "object", "properties": {}},
+    },
+}
 SEND_LEAD_FRAMES = 5  # frames sent ahead of real time to keep the device buffer fed
 
 # Conversation history per device, kept across sessions while the gateway runs.
@@ -42,7 +52,8 @@ class Session:
         self.turn: asyncio.Task | None = None
         self.history = _histories.setdefault(device_id, [])
         self.deny = set(cfg["tools"]["deny"])
-        self.tools: list[dict] = []
+        self.tools: list[dict] = [END_TOOL]
+        self.ending = False
         self.tool_names: dict[str, str] = {}  # llm-safe name -> device tool name
         self._mcp_id = 0
         self._mcp_waiting: dict[int, asyncio.Future] = {}
@@ -159,6 +170,9 @@ class Session:
             reply = await self._think(text, speaker)
             await speaker.finish()
             log.info("[%s] << %s  (turn %.2fs)", self.device_id, reply, time.monotonic() - t0)
+            if self.ending:
+                await asyncio.sleep(1.0)  # let the device finish playing
+                await self.ws.close()
             self.history += [{"role": "user", "content": text}, {"role": "assistant", "content": reply}]
             del self.history[: -2 * self.cfg["llm"]["history_turns"]]
         except asyncio.CancelledError:
@@ -170,13 +184,17 @@ class Session:
     async def _think(self, text: str, speaker: "Speaker") -> str:
         messages = [{"role": "system", "content": self.engines.persona}, *self.history, {"role": "user", "content": text}]
         spoken = ""
-        for _ in range(MAX_TOOL_ROUNDS):
+        for round_ in range(MAX_TOOL_ROUNDS):
             content, calls = "", []
-            async for event in self.engines.llm.stream(messages, self.tools):
+            # Offer tools only on the first round; small models otherwise repeat the call.
+            tools = self.tools if round_ == 0 else []
+            async for event in self.engines.llm.stream(messages, tools):
                 content += event.text
                 calls += event.tool_calls
                 await speaker.feed(event.text)
             spoken += content
+            if not calls and TOOL_AS_TEXT.search(content):
+                await self.call_tool("end_conversation", {})
             if not calls:
                 break
             messages.append({"role": "assistant", "content": content, "tool_calls": calls})
@@ -237,6 +255,10 @@ class Session:
         log.info("[%s] tools: %s", self.device_id, ", ".join(self.tool_names.values()) or "none")
 
     async def call_tool(self, safe_name: str, arguments: dict) -> str:
+        if safe_name == "end_conversation":
+            log.info("[%s] ending conversation", self.device_id)
+            self.ending = True
+            return "ok, say goodbye now"
         name = self.tool_names.get(safe_name)
         if not name:
             return f"Unknown tool {safe_name}"
@@ -267,7 +289,7 @@ class Speaker:
 
     @staticmethod
     def clean(text: str) -> str:
-        text = STAGE_DIRECTION.sub("", text)
+        text = TOOL_AS_TEXT.sub("", STAGE_DIRECTION.sub("", text))
         return re.sub(r"\s+", " ", NON_SPEECH.sub("", text)).strip()
 
     async def feed(self, text: str) -> None:
