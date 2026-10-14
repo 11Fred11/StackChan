@@ -37,6 +37,7 @@ class Req(BaseModel):
     exaggeration: float = 0.5
     cfg_weight: float = 0.5
     temperature: float = 0.8
+    seed: int | None = None  # fix the randomness to compare settings fairly
 
 
 def reference_for(voice: str, reference: str | None) -> Path:
@@ -61,6 +62,8 @@ def tts(req: Req) -> Response:
             model.prepare_conditionals(str(ref), exaggeration=req.exaggeration)
             conds_cache[key] = model.conds
         model.conds = conds_cache[key]
+        if req.seed is not None:
+            torch.manual_seed(req.seed)
         with torch.inference_mode():
             wav = model.generate(
                 req.text, exaggeration=req.exaggeration, cfg_weight=req.cfg_weight, temperature=req.temperature
