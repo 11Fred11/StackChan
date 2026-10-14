@@ -30,7 +30,7 @@ def lan_ip() -> str:
         return s.getsockname()[0]
 
 
-PUBLIC_HOST = CFG["server"]["public_host"] or lan_ip()
+PUBLIC_HOST = os.environ.get("GATEWAY_PUBLIC_HOST") or CFG["server"]["public_host"] or lan_ip()
 WS_URL = f"ws://{PUBLIC_HOST}:{CFG['server']['port']}/xiaozhi/v1/"
 
 

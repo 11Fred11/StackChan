@@ -1,0 +1,12 @@
+[Unit]
+Description=Stack-chan voice clone service (Chatterbox, GPU)
+After=network-online.target
+
+[Service]
+WorkingDirectory=@BACKEND@/services/chatterbox
+ExecStart=@BACKEND@/services/chatterbox/.venv/bin/python server.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

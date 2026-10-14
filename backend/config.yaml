@@ -5,7 +5,8 @@
 server:
   host: 0.0.0.0
   port: 8000
-  # Address the robot uses to reach this machine. Leave empty to auto-detect the LAN IP.
+  # Address the robot uses to reach this machine (GATEWAY_PUBLIC_HOST in .env overrides it).
+  # Leave empty to auto-detect the LAN IP.
   public_host: ""
 
 personas:

@@ -8,3 +8,6 @@
 **/__pycache__/
 **/*.pyc
 **/*.pyo
+
+# Local firmware overrides (gateway address etc.)
+firmware/sdkconfig.defaults.local
