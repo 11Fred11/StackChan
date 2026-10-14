@@ -41,8 +41,9 @@ class ChatterboxTTS:
 
     def __init__(self, cfg: dict) -> None:
         self._url = cfg["url"].rstrip("/") + "/tts"
-        self._voice = cfg["voice"]
-        self._params = {k: cfg[k] for k in ("exaggeration", "cfg_weight", "temperature") if k in cfg}
+        preset = cfg["presets"][cfg["preset"]]
+        self._voice = preset["voice"]
+        self._params = {k: preset[k] for k in ("reference", "exaggeration", "cfg_weight", "temperature") if k in preset}
         self._client = httpx.Client(timeout=60)
 
     def synthesize(self, text: str) -> tuple[np.ndarray, int]:
@@ -188,6 +189,6 @@ def load_engines(cfg: dict, persona: str) -> Engines:
     log.info("Brain: %s (%s)", cfg["llm"]["provider"], llm_cfg["model"])
     llm = LLMS[cfg["llm"]["provider"]](llm_cfg)
     tts_cfg = cfg["tts"][cfg["tts"]["provider"]]
-    log.info("Voice: %s (%s)", cfg["tts"]["provider"], tts_cfg.get("voice"))
+    log.info("Voice: %s (%s)", cfg["tts"]["provider"], tts_cfg.get("preset") or tts_cfg.get("voice"))
     tts = TTSS[cfg["tts"]["provider"]](tts_cfg)
     return Engines(stt=stt, llm=llm, tts=tts, persona=persona)

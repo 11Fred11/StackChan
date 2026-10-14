@@ -26,19 +26,25 @@ DEVICE = os.environ.get("CHATTERBOX_DEVICE", "cuda" if torch.cuda.is_available()
 
 model = ChatterboxTTS.from_pretrained(device=DEVICE)
 lock = threading.Lock()  # one generation at a time; the model is not thread-safe
-loaded_voice: str | None = None
+loaded_voice: tuple | None = None
 app = FastAPI()
 
 
 class Req(BaseModel):
     text: str
     voice: str
+    reference: str | None = None  # a file in voices/<voice>/; default: the longest clip
     exaggeration: float = 0.5
     cfg_weight: float = 0.5
     temperature: float = 0.8
 
 
-def reference_for(voice: str) -> Path:
+def reference_for(voice: str, reference: str | None) -> Path:
+    if reference:
+        path = VOICES / voice / reference
+        if not path.is_file():
+            raise HTTPException(404, f"voices/{voice}/{reference} not found")
+        return path
     clips = sorted((VOICES / voice).glob("*.wav"), key=lambda p: sf.info(p).duration, reverse=True)
     if not clips:
         raise HTTPException(404, f"no .wav files in voices/{voice}")
@@ -49,11 +55,12 @@ def reference_for(voice: str) -> Path:
 def tts(req: Req) -> Response:
     global loaded_voice
     with lock:
-        if loaded_voice != req.voice:
-            ref = reference_for(req.voice)
+        key = (req.voice, req.reference, req.exaggeration)
+        if loaded_voice != key:
+            ref = reference_for(req.voice, req.reference)
             log.info("loading voice %s from %s", req.voice, ref.name)
             model.prepare_conditionals(str(ref), exaggeration=req.exaggeration)
-            loaded_voice = req.voice
+            loaded_voice = key
         with torch.inference_mode():
             wav = model.generate(
                 req.text, exaggeration=req.exaggeration, cfg_weight=req.cfg_weight, temperature=req.temperature
