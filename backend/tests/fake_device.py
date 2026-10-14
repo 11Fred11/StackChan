@@ -54,8 +54,12 @@ async def main(wav: str) -> None:
                     p = m["payload"]
                     result = {}
                     if p["method"] == "tools/list":
-                        result = {"tools": [{"name": "self.robot.set_head_angles", "description": "Turn the robot head. yaw -90..90, pitch 0..45",
-                                             "inputSchema": {"type": "object", "properties": {"yaw": {"type": "integer"}, "pitch": {"type": "integer"}}}}]}
+                        result = {"tools": [
+                            {"name": "self.robot.set_head_angles", "description": "Turn the robot head. yaw -128..128 (negative is left), pitch 0..90",
+                             "inputSchema": {"type": "object", "properties": {"yaw": {"type": "integer"}, "pitch": {"type": "integer"}, "speed": {"type": "integer"}}}},
+                            {"name": "self.device.show_status", "description": "Show a full-screen device status overlay for 10 seconds.",
+                             "inputSchema": {"type": "object", "properties": {}}},
+                        ]}
                     elif p["method"] == "tools/call":
                         result = {"content": [{"type": "text", "text": "true"}], "isError": False}
                     await ws.send(json.dumps({"type": "mcp", "payload": {"jsonrpc": "2.0", "id": p["id"], "result": result}}))
