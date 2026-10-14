@@ -55,6 +55,9 @@ tts:
       exaggeration: 1.2
       cfg_weight: 0.25
       temperature: 0.9
+  # Pass the clone through an RVC model trained on the same recordings (services/rvc).
+  # Remove this block to hear the plain clone.
+  convert: {provider: rvc, model: rick-friend, index_rate: 0.6, protect: 0.33}
   fallback: {provider: kokoro, voice: am_michael, speed: 1.05}
 
 sfx:
