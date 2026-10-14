@@ -23,10 +23,10 @@ llm:
     model: qwen3:8b
 
 tts:
-  provider: kokoro           # kokoro (local stock voices, CPU) | chatterbox (local voice clone, GPU)
+  provider: chatterbox       # chatterbox (local voice clone, GPU) | kokoro (local stock voices, CPU)
   chatterbox:
     url: http://127.0.0.1:8001     # services/chatterbox
-    voice: placeholder             # a folder of reference .wav files in voices/
+    voice: rick                    # a folder of reference .wav files in voices/
     exaggeration: 0.6
     cfg_weight: 0.4
   kokoro:
