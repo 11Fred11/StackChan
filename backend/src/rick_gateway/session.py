@@ -415,8 +415,8 @@ class Speaker:
                 await self._flush_carry()
                 await self.queue.put(SFX_BURP)
             piece = self.clean(piece)
-            if not piece:
-                continue
+            if not any(ch.isalnum() for ch in piece):
+                continue  # punctuation left over after removing a burp or emoji
             # Tiny fragments ("Uh...", "Oh!") make the voice clone produce odd noises:
             # carry them into the next piece instead of voicing them alone.
             piece = (self.carry + " " + piece).strip() if self.carry else piece
