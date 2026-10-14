@@ -35,26 +35,20 @@ tts:
       cfg_weight: 0.3
       temperature: 0.9
       emotion_exaggeration: &moods   # the brain's mood sets how intense each reply sounds
-        angry: 1.2
-        laughing: 1.1
-        happy: 1.0
-        doubtful: 0.8
+        angry: 1.0                   # above ~1.0 Chatterbox tends to rush into gibberish
+        laughing: 0.95
+        happy: 0.9
+        doubtful: 0.75
         sad: 0.6
-        crying: 0.7
+        crying: 0.65
         sleepy: 0.5
     rick-stitched:          # 19 s of stitched snippets; closest speaker match so far
       voice: rick
       reference: rick-ref.wav
-      exaggeration: 0.9
+      exaggeration: 0.8
       cfg_weight: 0.3
       temperature: 0.9
       emotion_exaggeration: *moods
-    rick-max:
-      voice: rick
-      reference: sample1.wav
-      exaggeration: 1.2
-      cfg_weight: 0.25
-      temperature: 0.9
   # Pass the clone through an RVC model trained on the same recordings (services/rvc).
   # Remove this block to hear the plain clone.
   convert: {provider: rvc, model: rick-friend, index_rate: 0.6, protect: 0.33}

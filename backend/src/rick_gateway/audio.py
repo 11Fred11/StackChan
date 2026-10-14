@@ -56,7 +56,7 @@ class Endpointer:
     CHUNK_MS = 30
 
     def __init__(self, end_silence_ms: int) -> None:
-        self._vad = webrtcvad.Vad(2)
+        self._vad = webrtcvad.Vad(3)  # most aggressive: fewer false starts from room noise
         self._chunk_bytes = UPLINK_RATE * self.CHUNK_MS // 1000 * 2
         self._end_chunks = end_silence_ms // self.CHUNK_MS
         self.reset()
@@ -78,8 +78,8 @@ class Endpointer:
             if speech:
                 self._speech_chunks += 1
                 self._silent_chunks = 0
-                # Require ~150 ms of speech so clicks and servo noise don't count.
-                if self._speech_chunks >= 5:
+                # Require ~240 ms of speech so clicks, servo noise and the TV don't count.
+                if self._speech_chunks >= 8:
                     self.heard_speech = True
             else:
                 self._silent_chunks += 1
