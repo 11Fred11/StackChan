@@ -35,5 +35,17 @@ Container* RickAvatar::getPanel() const
 
 void RickAvatar::setEmotion(const Emotion& emotion)
 {
+    if (emotion == Emotion::Burp) {
+        auto& left = static_cast<RickEyes&>(leftEye());
+        auto& right = static_cast<RickEyes&>(rightEye());
+        left.setInvertedLid(true);
+        left.setWeight(100);
+        right.setInvertedLid(false);
+        right.setWeight(100);
+        mouth().setWeight(70);
+        mouth().setRotation(0);
+        unibrow().setRotation(0);
+        return;
+    }
     Avatar::setEmotion(emotion);
 }

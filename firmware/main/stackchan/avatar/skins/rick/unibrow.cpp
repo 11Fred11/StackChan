@@ -83,6 +83,9 @@ void RickUnibrow::setEmotion(const Emotion& emotion)
         case Emotion::Sleepy:
             setRotation(-200);
             break;
+        case Emotion::Burp:
+            setRotation(0);
+            break;
         default:
             break;
     }

@@ -14,6 +14,7 @@ enum class Emotion {
     Sad,
     Doubt,
     Sleepy,
+    Burp,
 };
 
 }  // namespace stackchan::avatar

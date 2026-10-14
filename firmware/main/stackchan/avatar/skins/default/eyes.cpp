@@ -72,9 +72,19 @@ void DefaultEyes::setWeight(int weight)
 {
     Feature::setWeight(weight);
 
-    _eyelid_offset_y = -map_range(_weight, 0, 100, 0, (int)_eyelid->getHeight());
+    if (_inverted_lid) {
+        _eyelid_offset_y = map_range(_weight, 0, 100, 0, (int)_eyelid->getHeight());
+    } else {
+        _eyelid_offset_y = -map_range(_weight, 0, 100, 0, (int)_eyelid->getHeight());
+    }
 
     _eyelid->setY(_eyelid_offset_y);
+}
+
+void DefaultEyes::setInvertedLid(bool inverted)
+{
+    _inverted_lid = inverted;
+    setWeight(getWeight());
 }
 
 void DefaultEyes::setRotation(int rotation)
@@ -118,6 +128,12 @@ void DefaultEyes::setEmotion(const Emotion& emotion)
         case Emotion::Sleepy:
             apply_style(35, -50);
             break;
+        case Emotion::Burp: {
+            int w = _is_left_eye ? 50 : 100;
+            setInvertedLid(_is_left_eye);
+            apply_style(w, 0);
+            break;
+        }
         default:
             break;
     }
