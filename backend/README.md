@@ -3,18 +3,31 @@
 A self-hosted voice server for Stack-chan. It speaks the Xiaozhi device protocol (see
 `firmware/xiaozhi-esp32/docs/websocket.md`), so the robot only needs its config URL pointed here.
 
-Each stage is pluggable in `config.yaml`:
+## Personas
 
-| Stage | Default | Alternative |
-|---|---|---|
-| Hearing | faster-whisper `small.en` (local CPU) | |
-| Brain | Gemini Flash (cloud, `GEMINI_API_KEY` in `.env`) | Qwen3 8B via Ollama (local GPU) |
-| Voice | Chatterbox voice clone (local GPU, `services/chatterbox`) | Kokoro stock voices (local CPU) |
+Each persona is a folder in `personas/` with its own personality, hearing, brain, voice, face and language:
+
+```
+personas/
+  _common.md          rules every persona gets (mood emoji, tools, limits)
+  rick/               persona.yaml + prompt.md
+  stackchan/          the original cheerful Stack-chan
+  darja/              Tunisian Darija (disabled until the Darja GPU speech server is deployed)
+```
+
+`persona.yaml` picks a provider per stage:
+
+| Stage | Providers |
+|---|---|
+| Hearing | `whisper` (local), `darja` (Tunisian, Darja GPU server) |
+| Brain | `gemini` (cloud, `GEMINI_API_KEY` in `.env`), `ollama` (local) |
+| Voice | `chatterbox` (local voice clone, `services/chatterbox`), `kokoro` (local stock voices), `darja` |
+
+Shared connection settings for the providers are in `config.yaml`. Ask the robot to "switch to Stack-chan"
+(or any persona's name) to swap; each robot remembers its persona in `state/devices.json`.
 
 Voices for Chatterbox are folders of reference recordings in `voices/<name>/` (gitignored).
 Only clone voices you have the speaker's consent for.
-
-Rick's personality is `persona/rick.md`. Settings are in `config.yaml`.
 
 ## Run
 

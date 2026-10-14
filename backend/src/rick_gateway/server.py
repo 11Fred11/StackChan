@@ -13,7 +13,7 @@ import yaml
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, WebSocket
 
-from .engines import load_engines
+from .engines import Personas
 from .session import Session
 
 log = logging.getLogger("rick_gateway")
@@ -37,9 +37,8 @@ WS_URL = f"ws://{PUBLIC_HOST}:{CFG['server']['port']}/xiaozhi/v1/"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     os.chdir(ROOT)
-    persona = (ROOT / CFG["persona"]).read_text()
-    app.state.engines = load_engines(CFG, persona)
-    await app.state.engines.llm.warm_up()
+    app.state.personas = Personas(CFG, ROOT)
+    app.state.personas.get(app.state.personas.default)  # load the default persona's models up front
     log.info("Ready. Device config URL: http://%s:%s/xiaozhi/ota/", PUBLIC_HOST, CFG["server"]["port"])
     yield
 
@@ -76,7 +75,7 @@ async def voice(ws: WebSocket) -> None:
     device_id = ws.headers.get("device-id", "unknown")
     await ws.accept()
     log.info("[%s] session opened", device_id)
-    await Session(ws, app.state.engines, CFG, device_id).run()
+    await Session(ws, app.state.personas, CFG, device_id).run()
 
 
 def main() -> None:

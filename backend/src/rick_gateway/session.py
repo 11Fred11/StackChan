@@ -12,8 +12,10 @@ import uuid
 
 from fastapi import WebSocket, WebSocketDisconnect
 
+from pathlib import Path
+
 from .audio import DOWNLINK_RATE, FRAME_MS, Endpointer, OpusIn, OpusOut
-from .engines import Engines
+from .engines import Persona, Personas
 
 log = logging.getLogger(__name__)
 
@@ -35,15 +37,57 @@ END_TOOL = {
     },
 }
 SEND_LEAD_FRAMES = 5  # frames sent ahead of real time to keep the device buffer fed
+FACE_TOOL = "self.avatar.set_face"  # firmware tool that swaps the on-screen avatar skin
 
-# Conversation history per device, kept across sessions while the gateway runs.
-_histories: dict[str, list[dict]] = {}
+# Conversation history per (device, persona), kept across sessions while the gateway runs.
+_histories: dict[tuple[str, str], list[dict]] = {}
+
+
+class DeviceState:
+    """Remembers each robot's current persona across restarts (state/devices.json)."""
+
+    PATH = Path("state/devices.json")
+
+    @classmethod
+    def persona(cls, device_id: str) -> str | None:
+        try:
+            return json.loads(cls.PATH.read_text()).get(device_id, {}).get("persona")
+        except (FileNotFoundError, json.JSONDecodeError):
+            return None
+
+    @classmethod
+    def set_persona(cls, device_id: str, key: str) -> None:
+        try:
+            data = json.loads(cls.PATH.read_text())
+        except (FileNotFoundError, json.JSONDecodeError):
+            data = {}
+        data.setdefault(device_id, {})["persona"] = key
+        cls.PATH.parent.mkdir(exist_ok=True)
+        cls.PATH.write_text(json.dumps(data, indent=2))
+
+
+def switch_tool(available: dict[str, str]) -> dict:
+    return {
+        "type": "function",
+        "function": {
+            "name": "switch_persona",
+            "description": "Hand the robot over to another persona when the user asks for them. Personas: "
+            + "; ".join(f"{k} = {d}" for k, d in available.items()),
+            "parameters": {
+                "type": "object",
+                "properties": {"persona": {"type": "string", "enum": list(available)}},
+                "required": ["persona"],
+            },
+        },
+    }
 
 
 class Session:
-    def __init__(self, ws: WebSocket, engines: Engines, cfg: dict, device_id: str) -> None:
+    def __init__(self, ws: WebSocket, personas: Personas, cfg: dict, device_id: str) -> None:
         self.ws = ws
-        self.engines = engines
+        self.personas = personas
+        self.persona: Persona = personas.get(DeviceState.persona(device_id) or personas.default)
+        self.switch_to: str | None = None
         self.cfg = cfg
         self.device_id = device_id
         self.session_id = uuid.uuid4().hex[:12]
@@ -52,9 +96,10 @@ class Session:
         self.listening = False
         self.listen_started_at = 0.0
         self.turn: asyncio.Task | None = None
-        self.history = _histories.setdefault(device_id, [])
         self.deny = set(cfg["tools"]["deny"])
         self.tools: list[dict] = [END_TOOL]
+        if len(personas.available) > 1:
+            self.tools.append(switch_tool(personas.available))
         self.ending = False
         self.tool_names: dict[str, str] = {}  # llm-safe name -> device tool name
         self._mcp_id = 0
@@ -161,7 +206,7 @@ class Session:
     async def _turn(self, audio) -> None:
         try:
             t0 = time.monotonic()
-            text = await asyncio.to_thread(self.engines.stt.transcribe, audio)
+            text = await asyncio.to_thread(self.persona.stt.transcribe, audio)
             if not text or len(text) < 2:
                 self._start_listening()
                 return
@@ -169,28 +214,51 @@ class Session:
             await self.send_json({"type": "stt", "text": text})
 
             speaker = Speaker(self)
+            persona_before = self.persona
             reply = await self._think(text, speaker)
+            switch_to, self.switch_to = self.switch_to, None
+            if switch_to:
+                # Save the switch now: the handover line still plays in the old voice
+                # (the speaker holds its own persona), then the new persona greets.
+                self.persona = self.personas.get(switch_to)
+                DeviceState.set_persona(self.device_id, switch_to)
+                log.info("[%s] switched to persona %s", self.device_id, switch_to)
             await speaker.finish()
             log.info("[%s] << %s  (turn %.2fs)", self.device_id, reply, time.monotonic() - t0)
+            history = _histories.setdefault((self.device_id, persona_before.key), [])
+            history += [{"role": "user", "content": text}, {"role": "assistant", "content": reply}]
+            del history[: -2 * persona_before.history_turns]
+            if switch_to:
+                await self._greet()
             if self.ending:
                 await asyncio.sleep(1.0)  # let the device finish playing
                 await self.ws.close()
-            self.history += [{"role": "user", "content": text}, {"role": "assistant", "content": reply}]
-            del self.history[: -2 * self.cfg["llm"]["history_turns"]]
         except asyncio.CancelledError:
             raise
         except Exception:
             log.exception("[%s] turn failed", self.device_id)
             await self.send_json({"type": "tts", "state": "stop"})
 
+    @property
+    def history(self) -> list[dict]:
+        return _histories.setdefault((self.device_id, self.persona.key), [])
+
+    async def _greet(self) -> None:
+        if self.persona.face and FACE_TOOL.replace(".", "_") in self.tool_names:
+            await self.call_tool(FACE_TOOL.replace(".", "_"), {"face": self.persona.face})
+        if self.persona.greeting:
+            speaker = Speaker(self)
+            await speaker.feed("😊 " + self.persona.greeting)
+            await speaker.finish()
+
     async def _think(self, text: str, speaker: "Speaker") -> str:
-        messages = [{"role": "system", "content": self.engines.persona}, *self.history, {"role": "user", "content": text}]
+        messages = [{"role": "system", "content": self.persona.prompt}, *self.history, {"role": "user", "content": text}]
         spoken = ""
         for round_ in range(MAX_TOOL_ROUNDS):
             content, calls = "", []
             # Offer tools only on the first round; small models otherwise repeat the call.
             tools = self.tools if round_ == 0 else []
-            async for event in self.engines.llm.stream(messages, tools):
+            async for event in self.persona.llm.stream(messages, tools):
                 content += event.text
                 calls += event.tool_calls
                 await speaker.feed(event.text)
@@ -261,6 +329,14 @@ class Session:
             log.info("[%s] ending conversation", self.device_id)
             self.ending = True
             return "ok, say goodbye now"
+        if safe_name == "switch_persona":
+            key = arguments.get("persona", "")
+            if key not in self.personas.available:
+                return f"No persona called {key}. Available: {', '.join(self.personas.available)}"
+            if key == self.persona.key:
+                return "You are already that persona."
+            self.switch_to = key
+            return f"ok, {key} takes over after you say one short handover line"
         name = self.tool_names.get(safe_name)
         if not name:
             return f"Unknown tool {safe_name}"
@@ -280,6 +356,7 @@ class Speaker:
 
     def __init__(self, session: Session) -> None:
         self.s = session
+        self.persona = session.persona  # fixed for this reply, even if a switch is pending
         self.opus_out = OpusOut()
         self.buffer = ""
         self.emotion_done = False
@@ -322,7 +399,7 @@ class Speaker:
         # Real burp sound effects wherever the text says "burp".
         pieces = BURP.split(sentence)
         for i, piece in enumerate(pieces):
-            if i > 0 and "burp" in self.s.engines.sfx:
+            if i > 0 and "burp" in self.persona.sfx:
                 await self.queue.put(SFX_BURP)
             piece = self.clean(piece)
             if piece:
@@ -340,10 +417,10 @@ class Speaker:
     async def _play(self) -> None:
         while (sentence := await self.queue.get()) is not None:
             if sentence == SFX_BURP:
-                audio, rate = self.s.engines.sfx["burp"]
+                audio, rate = self.persona.sfx["burp"]
                 sentence = "*burp*"
             else:
-                audio, rate = await asyncio.to_thread(self.s.engines.tts.synthesize, sentence, self.emotion)
+                audio, rate = await asyncio.to_thread(self.persona.tts.synthesize, sentence, self.emotion)
             frames = self.opus_out.encode(audio, rate)
             if not self.started:
                 self.started = True

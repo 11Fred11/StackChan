@@ -1,4 +1,6 @@
-# Rick gateway configuration. Secrets go in .env, never here.
+# Gateway configuration. Secrets go in .env, never here.
+# Each persona (personas/<key>/persona.yaml) picks its own hearing, brain and voice;
+# this file holds the shared connection settings for those providers.
 
 server:
   host: 0.0.0.0
@@ -6,84 +8,27 @@ server:
   # Address the robot uses to reach this machine. Leave empty to auto-detect the LAN IP.
   public_host: ""
 
-stt:
-  provider: whisper          # whisper (local)
-  model: small.en
-  device: cpu                # cpu keeps the GPU free for the LLM
-  compute_type: int8
+personas:
+  dir: personas
+  default: rick
 
-llm:
-  provider: gemini           # gemini (cloud, needs GEMINI_API_KEY in .env) | ollama (local)
-  history_turns: 8
-  gemini:
-    model: gemini-flash-lite-latest
-    thinking_config: {thinking_level: minimal}   # fastest replies (~0.5–0.8 s to first word)
-  ollama:
+providers:
+  whisper:                   # local speech-to-text
+    model: small.en
+    device: cpu              # keeps the GPU for the voice clone
+    compute_type: int8
+  gemini: {}                 # cloud brain; GEMINI_API_KEY in .env
+  ollama:                    # local brain
     url: http://127.0.0.1:11434
     model: qwen3:8b
-
-tts:
-  provider: chatterbox       # chatterbox (local voice clone, GPU) | kokoro (local stock voices, CPU)
-  chatterbox:
-    url: http://127.0.0.1:8001     # services/chatterbox
-    preset: rick-stitched
-    # voice = a folder of reference .wav files in voices/; reference = which file (default: longest)
-    presets:
-      rick-v1:                     # first clone; calm but solid (tag rick-voice-v1)
-        voice: rick
-        reference: sample1.wav
-        exaggeration: 0.6
-        cfg_weight: 0.4
-      rick-expressive:             # clip B
-        voice: rick
-        reference: sample1.wav
-        exaggeration: 0.9
-        cfg_weight: 0.3
-        temperature: 0.9
-      rick-angry:                  # clip C: same, copying the shouty sample
-        voice: rick
-        reference: sample3.wav
-        exaggeration: 0.9
-        cfg_weight: 0.3
-        temperature: 0.9
-        emotion_exaggeration:      # the brain's mood sets how intense each reply sounds
-          angry: 1.2
-          laughing: 1.1
-          happy: 1.0
-          doubtful: 0.8
-          sad: 0.6
-          crying: 0.7
-          sleepy: 0.5
-      rick-stitched:               # clip E: 19 s of stitched snippets; closest speaker match so far
-        voice: rick
-        reference: rick-ref.wav
-        exaggeration: 0.9
-        cfg_weight: 0.3
-        temperature: 0.9
-        emotion_exaggeration:
-          angry: 1.2
-          laughing: 1.1
-          happy: 1.0
-          doubtful: 0.8
-          sad: 0.6
-          crying: 0.7
-          sleepy: 0.5
-      rick-max:                    # clip D
-        voice: rick
-        reference: sample1.wav
-        exaggeration: 1.2
-        cfg_weight: 0.25
-        temperature: 0.9
-  kokoro:
+  chatterbox:                # local voice-clone service (services/chatterbox)
+    url: http://127.0.0.1:8001
+  kokoro:                    # local stock voices, CPU
     model_path: models/kokoro-v1.0.onnx
     voices_path: models/voices-v1.0.bin
-    voice: am_michael
-    speed: 1.05
-
-persona: persona/rick.md
-
-sfx:
-  burp: ../firmware/main/assets/sfx/rick/burp.ogg
+  darja:                     # the Darja project's GPU speech server (Tunisian)
+    url_env: DARJA_GPU_URL
+    key_env: DARJA_GPU_API_KEY
 
 vad:
   end_silence_ms: 700        # silence after speech that ends a turn
