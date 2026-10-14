@@ -406,6 +406,7 @@ class Speaker:
         self.emotion = "neutral"
         self.queued_any = False
         self.carry = ""
+        self.held: str | None = None
         self.started = False
         self.queue: asyncio.Queue[str | None] = asyncio.Queue()
         self.player = asyncio.create_task(self._play())
@@ -445,6 +446,9 @@ class Speaker:
         for i, piece in enumerate(pieces):
             if i > 0 and "burp" in self.persona.sfx:
                 await self._flush_carry()
+                if self.held is not None:
+                    held, self.held = self.held, None
+                    await self.queue.put(held)
                 await self.queue.put(SFX_BURP)
             piece = self.clean(piece)
             if not any(ch.isalnum() for ch in piece):
@@ -456,16 +460,33 @@ class Speaker:
             if len(piece) < MIN_SPOKEN_CHARS and not (final and i == len(pieces) - 1):
                 self.carry = piece
                 continue
-            self.queued_any = True
-            await self.queue.put(piece)
+            await self._hold(piece)
         if final:
             await self._flush_carry()
+            await self._hold(None)
+
+    async def _hold(self, piece: str | None) -> None:
+        """Keeps one piece back so a short final sentence ("Goodbye.") is merged into the one
+        before it: voiced alone, very short text makes the clone trail off into gibberish.
+        The first piece is never held, so Rick starts talking as soon as possible."""
+        if piece is not None and not self.queued_any:
+            self.queued_any = True
+            await self.queue.put(piece)
+            return
+        held, self.held = self.held, piece
+        if held is None:
+            return
+        if piece is None:  # end of reply: flush what we held
+            await self.queue.put(held)
+        elif len(piece) < 2 * MIN_SPOKEN_CHARS:
+            self.held = f"{held} {piece}"  # keep holding the merged piece
+        else:
+            await self.queue.put(held)
 
     async def _flush_carry(self) -> None:
         if self.carry:
             carry, self.carry = self.carry, ""
-            self.queued_any = True
-            await self.queue.put(carry)
+            await self._hold(carry)
 
     async def finish(self) -> None:
         await self._queue(self.buffer, final=True)
