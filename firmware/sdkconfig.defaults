@@ -10,15 +10,11 @@ CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_LANGUAGE_EN_US=y
 CONFIG_BOARD_TYPE_M5STACK_STACK_CHAN=y
 CONFIG_SEND_WAKE_WORD_DATA=n
-# Wake words: "Hey Rick" and "Hi Stack-chan", recognised on-device by Espressif's English
-# MultiNet command model. To go back to the stock WakeNet "Hi Stack-chan" only, replace the
-# CUSTOM/MN lines below with CONFIG_USE_AFE_WAKE_WORD=y.
+# Wake word: "Hi Stack-chan" via Espressif's WakeNet9 behind the AFE (echo cancellation,
+# voice activity). A "Hey Rick" phrase via MultiNet was tried on 2026-10-14 and dropped: that
+# path feeds raw mic audio to a command recogniser and woke only ~1 in 10 times.
+CONFIG_USE_AFE_WAKE_WORD=y
 CONFIG_SR_WN_WN9_HISTACKCHAN_TTS3=y
-CONFIG_USE_CUSTOM_WAKE_WORD=y
-CONFIG_SR_MN_EN_MULTINET7_QUANT=y
-CONFIG_CUSTOM_WAKE_WORD="hey rick;hi stack chan"
-CONFIG_CUSTOM_WAKE_WORD_DISPLAY="Hey Rick;Hi Stack-chan"
-CONFIG_CUSTOM_WAKE_WORD_THRESHOLD=12
 CONFIG_COMPILER_OPTIMIZATION_SIZE=y
 CONFIG_COMPILER_CXX_EXCEPTIONS=y
 CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE=1024
