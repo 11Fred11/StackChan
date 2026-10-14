@@ -37,9 +37,13 @@ class KokoroTTS:
 
 
 class ChatterboxTTS:
-    """Calls the local Chatterbox voice-clone service (services/chatterbox)."""
+    """Calls the local Chatterbox voice-clone service (services/chatterbox).
 
-    def __init__(self, cfg: dict) -> None:
+    Falls back to a Kokoro stock voice if the service fails, so the robot never goes mute.
+    """
+
+    def __init__(self, cfg: dict, fallback: "KokoroTTS | None" = None) -> None:
+        self._fallback = fallback
         self._url = cfg["url"].rstrip("/") + "/tts"
         preset = cfg["presets"][cfg["preset"]]
         self._voice = preset["voice"]
@@ -51,8 +55,14 @@ class ChatterboxTTS:
         params = dict(self._params)
         if emotion in self._by_emotion:
             params["exaggeration"] = self._by_emotion[emotion]
-        resp = self._client.post(self._url, json={"text": text, "voice": self._voice, **params})
-        resp.raise_for_status()
+        try:
+            resp = self._client.post(self._url, json={"text": text, "voice": self._voice, **params})
+            resp.raise_for_status()
+        except httpx.HTTPError as e:
+            if not self._fallback:
+                raise
+            log.warning("voice-clone service failed (%s); using the fallback voice", e)
+            return self._fallback.synthesize(text, emotion)
         rate = int(resp.headers["X-Sample-Rate"])
         return np.frombuffer(resp.content, dtype=np.int16).astype(np.float32) / 32768.0, rate
 
@@ -195,7 +205,10 @@ def load_engines(cfg: dict, persona: str) -> Engines:
     llm = LLMS[cfg["llm"]["provider"]](llm_cfg)
     tts_cfg = cfg["tts"][cfg["tts"]["provider"]]
     log.info("Voice: %s (%s)", cfg["tts"]["provider"], tts_cfg.get("preset") or tts_cfg.get("voice"))
-    tts = TTSS[cfg["tts"]["provider"]](tts_cfg)
+    if cfg["tts"]["provider"] == "chatterbox":
+        tts = ChatterboxTTS(tts_cfg, fallback=KokoroTTS(cfg["tts"]["kokoro"]))
+    else:
+        tts = TTSS[cfg["tts"]["provider"]](tts_cfg)
     return Engines(stt=stt, llm=llm, tts=tts, persona=persona, sfx=load_sfx(cfg.get("sfx", {})))
 
 
