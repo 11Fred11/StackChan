@@ -27,6 +27,13 @@ STAGE_DIRECTION = re.compile(r"\*[^*]*\*|\{[^}]*\}|\[[^\]]*\]")
 TOOL_AS_TEXT = re.compile(r"\bend[_ ]conversation\b\W*", re.IGNORECASE)
 NON_SPEECH = re.compile(r"[^\w\s.,!?'’\-…:;\"()]")
 SFX_BURP = "\x00burp"
+MIN_SPOKEN_CHARS = 12
+# The brain sometimes says goodbye without calling end_conversation; a clear goodbye ends it anyway.
+GOODBYE = re.compile(
+    r"^\W*(?:ok(?:ay)?\W+|alright\W+|thanks?\W+(?:you\W+)?)?(?:rick\W+)?"
+    r"(?:bye|goodbye|good ?night|night|see (?:you|ya)|later|go to sleep|sleep|that's all|stop|shut up)\b",
+    re.IGNORECASE,
+)
 MAX_TOOL_ROUNDS = 3
 END_TOOL = {
     "type": "function",
@@ -212,6 +219,8 @@ class Session:
                 self._start_listening()
                 return
             log.info("[%s] >> %s  (stt %.2fs)", self.device_id, text, time.monotonic() - t0)
+            if GOODBYE.search(text):
+                self.ending = True
             await self.send_json({"type": "stt", "text": text})
 
             speaker = Speaker(self)
@@ -364,6 +373,7 @@ class Speaker:
         self.emotion_done = False
         self.emotion = "neutral"
         self.queued_any = False
+        self.carry = ""
         self.started = False
         self.queue: asyncio.Queue[str | None] = asyncio.Queue()
         self.player = asyncio.create_task(self._play())
@@ -397,19 +407,36 @@ class Speaker:
                 await self._queue(self.buffer[: cut + 1])
                 self.buffer = self.buffer[cut + 2 :]
 
-    async def _queue(self, sentence: str) -> None:
+    async def _queue(self, sentence: str, final: bool = False) -> None:
         # Real burp sound effects wherever the text says "burp".
         pieces = BURP.split(sentence)
         for i, piece in enumerate(pieces):
             if i > 0 and "burp" in self.persona.sfx:
+                await self._flush_carry()
                 await self.queue.put(SFX_BURP)
             piece = self.clean(piece)
-            if piece:
-                self.queued_any = True
-                await self.queue.put(piece)
+            if not any(ch.isalnum() for ch in piece):
+                continue  # punctuation left over after removing a burp or emoji
+            # Tiny fragments ("Uh...", "Oh!") make the voice clone produce odd noises:
+            # carry them into the next piece instead of voicing them alone.
+            piece = (self.carry + " " + piece).strip() if self.carry else piece
+            self.carry = ""
+            if len(piece) < MIN_SPOKEN_CHARS and not (final and i == len(pieces) - 1):
+                self.carry = piece
+                continue
+            self.queued_any = True
+            await self.queue.put(piece)
+        if final:
+            await self._flush_carry()
+
+    async def _flush_carry(self) -> None:
+        if self.carry:
+            carry, self.carry = self.carry, ""
+            self.queued_any = True
+            await self.queue.put(carry)
 
     async def finish(self) -> None:
-        await self._queue(self.buffer)
+        await self._queue(self.buffer, final=True)
         self.buffer = ""
         await self.queue.put(None)
         await self.player

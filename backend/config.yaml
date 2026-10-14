@@ -39,7 +39,7 @@ vision:                      # answers questions about photos from the robot's c
 
 vad:
   end_silence_ms: 700        # silence after speech that ends a turn
-  no_speech_timeout_s: 10    # close the session if nobody talks
+  no_speech_timeout_s: 7     # go idle if nobody talks
 
 tools:
   # Device MCP tools the LLM must never call.

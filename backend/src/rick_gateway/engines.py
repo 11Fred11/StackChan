@@ -32,6 +32,13 @@ def _whisper_model(model: str, device: str, compute_type: str):
     return WhisperModel(model, device=device, compute_type=compute_type)
 
 
+# What Whisper "hears" in silence and background noise (it was trained on subtitled video).
+WHISPER_HALLUCINATIONS = (
+    "thanks for watching", "thank you for watching", "please subscribe", "like and subscribe",
+    "see you in the next video", "subtitles by", "amara.org", "you", "oh.", "uh.",
+)
+
+
 class WhisperSTT:
     def __init__(self, cfg: dict) -> None:
         self._model = _whisper_model(cfg["model"], cfg["device"], cfg["compute_type"])
@@ -39,7 +46,16 @@ class WhisperSTT:
 
     def transcribe(self, pcm16k: np.ndarray) -> str:
         segments, _ = self._model.transcribe(pcm16k, language=self._language, beam_size=1, vad_filter=False)
-        return " ".join(s.text.strip() for s in segments).strip()
+        # Drop segments Whisper itself doubts: likely noise, not speech.
+        kept = [s.text.strip() for s in segments if s.no_speech_prob < 0.6 and s.avg_logprob > -1.0]
+        text = " ".join(kept).strip()
+        audio_seconds = len(pcm16k) / 16000
+        if text.lower() in WHISPER_HALLUCINATIONS or (
+            audio_seconds < 1.2 and any(h in text.lower() for h in WHISPER_HALLUCINATIONS[:6])
+        ):
+            log.info("ignoring likely noise transcript: %r", text)
+            return ""
+        return text
 
 
 class RemoteSTT:
