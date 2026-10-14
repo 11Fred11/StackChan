@@ -61,7 +61,9 @@ class Endpointer:
         self._end_chunks = end_silence_ms // self.CHUNK_MS
         self.reset()
 
-    def reset(self) -> None:
+    def reset(self, skip_ms: int = 0) -> None:
+        # Ignore the start of the stream: the robot's own chime or the tail of its last reply.
+        self._skip_bytes = UPLINK_RATE * skip_ms // 1000 * 2
         self._pending = b""
         self.audio = bytearray()
         self.heard_speech = False
@@ -70,6 +72,10 @@ class Endpointer:
 
     def feed(self, pcm: bytes) -> bool:
         """Adds PCM; returns True when a finished utterance is in self.audio."""
+        if self._skip_bytes:
+            dropped = min(self._skip_bytes, len(pcm))
+            self._skip_bytes -= dropped
+            pcm = pcm[dropped:]
         self._pending += pcm
         done = False
         while len(self._pending) >= self._chunk_bytes:

@@ -106,6 +106,7 @@ class Session:
         self.opus_in = OpusIn()
         self.endpointer = Endpointer(cfg["vad"]["end_silence_ms"])
         self.listening = False
+        self.listened_before = False
         self.listen_started_at = 0.0
         self.turn: asyncio.Task | None = None
         self.deny = set(cfg["tools"]["deny"])
@@ -186,7 +187,10 @@ class Session:
             self._on_mcp(msg.get("payload", {}))
 
     def _start_listening(self) -> None:
-        self.endpointer.reset()
+        # After the wake word the robot plays a "pop" chime that the mic hears (Whisper turned
+        # it into "Whoop!"); after a reply, the speaker's tail can echo. Skip both.
+        self.endpointer.reset(skip_ms=600 if not self.listened_before else 250)
+        self.listened_before = True
         self.listening = True
         self.listen_started_at = time.monotonic()
 
