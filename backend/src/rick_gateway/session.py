@@ -281,6 +281,7 @@ class Speaker:
         self.opus_out = OpusOut()
         self.buffer = ""
         self.emotion_done = False
+        self.queued_any = False
         self.started = False
         self.queue: asyncio.Queue[str | None] = asyncio.Queue()
         self.player = asyncio.create_task(self._play())
@@ -306,10 +307,17 @@ class Speaker:
         for sentence in parts[:-1]:
             await self._queue(sentence)
         self.buffer = parts[-1]
+        # Get the first words out fast: speak up to the first comma instead of a whole long sentence.
+        if not self.queued_any:
+            cut = self.buffer.find(", ", 15)
+            if cut != -1:
+                await self._queue(self.buffer[: cut + 1])
+                self.buffer = self.buffer[cut + 2 :]
 
     async def _queue(self, sentence: str) -> None:
         sentence = self.clean(sentence)
         if sentence:
+            self.queued_any = True
             await self.queue.put(sentence)
 
     async def finish(self) -> None:
